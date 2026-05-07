@@ -325,50 +325,22 @@ function pickMatAmb(ambId,stoneId){
   var amb=ambientes.find(function(a){return a.id==ambId;});
   if(!amb)return;
   amb.selMat=stoneId;
-  // Fecha carrossel e atualiza barra
-  var panel=document.getElementById('matpick-'+ambId);
-  if(panel){panel.innerHTML=buildMatCarouselHtml(amb);panel.style.display='none';}
-  var bar=document.getElementById('matbar-'+ambId);
-  if(bar)bar.innerHTML=buildMatBarHtml(amb);
-}
-
-function buildMatBarHtml(amb){
-  var s=CFG.stones.find(function(x){return x.id===amb.selMat;});
-  // Estado vazio — prompt discreto, sem vermelho
-  if(!s){
-    return '<div onclick="toggleMatPick('+amb.id+')" style="'
-      +'display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;'
-      +'border-radius:8px;border:1px dashed rgba(201,168,76,.2);background:transparent;">'
-      +'<span style="font-size:.65rem;color:var(--t4);">🪨</span>'
-      +'<span style="font-size:.68rem;color:var(--t3);">Selecione uma pedra</span>'
-      +'<span style="font-size:.6rem;color:var(--t4);margin-left:auto;">▾</span>'
-      +'</div>';
+  // Atualiza só o carrossel e o indicador — sem re-render completo
+  var car=document.getElementById('mcar-'+ambId);
+  if(car)car.outerHTML=buildMatCarouselHtml(amb);
+  var ind=document.getElementById('mind-'+ambId);
+  if(ind){
+    var s=CFG.stones.find(function(x){return x.id===amb.selMat;});
+    ind.innerHTML=s?s.nm+' · <span style="color:var(--gold2);">R$ '+s.pr.toLocaleString('pt-BR')+'/m²</span>'
+                   :'<span style="color:var(--t4);">selecione uma pedra</span>';
   }
-  // Estado preenchido — miniatura + nome + preço + trocar
-  var tx=s.photo?'':s.tx;
-  return '<div onclick="toggleMatPick('+amb.id+')" style="'
-    +'display:flex;align-items:center;gap:9px;padding:6px 10px 6px 6px;cursor:pointer;'
-    +'border-radius:8px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.05);">'
-    +'<div class="msw '+tx+'" style="width:32px;height:32px;min-width:32px;border-radius:6px;overflow:hidden;flex-shrink:0;">'
-    +(s.photo?'<img src="'+s.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;">':'')
-    +'<div class="mshine"></div></div>'
-    +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-size:.72rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nm+'</div>'
-      +'<div style="font-size:.58rem;color:var(--gold2);margin-top:1px;">R$ '+s.pr.toLocaleString('pt-BR')+'/m²</div>'
-    +'</div>'
-    +'<div style="font-size:.58rem;color:var(--t4);flex-shrink:0;">trocar ▾</div>'
-  +'</div>';
 }
 
-function toggleMatPick(ambId){
-  var panel=document.getElementById('matpick-'+ambId);
-  if(!panel)return;
-  var open=panel.style.display!=='none';
-  panel.style.display=open?'none':'block';
-}
+// buildMatBarHtml e toggleMatPick mantidos por compatibilidade mas não usados no fluxo principal
+function buildMatBarHtml(amb){return '';}
+function toggleMatPick(ambId){}
 
 function buildMatCarouselHtml(amb){
-  // Ordem de preferência por tipo de ambiente
   var PREF={
     'Cozinha':  ['Granito Cinza','Granito Preto','Granito Branco','Granito Verde','Ultra Compacto','Quartzito','Mármore','Travertino'],
     'Banheiro': ['Mármore','Quartzito','Granito Branco','Granito Cinza','Travertino','Ultra Compacto','Granito Preto','Granito Verde'],
@@ -383,46 +355,62 @@ function buildMatCarouselHtml(amb){
   var ordem=PREF[amb.tipo]||PREF['Outro'];
   var todas=CFG.stones.filter(function(s){return s.pr>0;});
   if(!todas.length){
-    return '<div style="font-size:.65rem;color:var(--t4);padding:8px 0;">Nenhuma pedra cadastrada — Config → Pedras</div>';
+    return '<div id="mcar-'+amb.id+'" style="font-size:.62rem;color:var(--t4);padding:6px 0 2px;">Nenhuma pedra cadastrada — Config → Pedras</div>';
   }
-  // Ordena por preferência, mantendo pedras fora da lista ao final
   var ord=[];
   ordem.forEach(function(cat){todas.filter(function(s){return s.cat===cat;}).forEach(function(s){ord.push(s);});});
   todas.forEach(function(s){if(ord.indexOf(s)===-1)ord.push(s);});
 
-  // Carrossel único — todos os cards em uma linha
-  var h='<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin:0 -4px;padding-left:4px;">';
+  // Uma única faixa horizontal com scroll, sem agrupamentos verticais
+  var h='<div id="mcar-'+amb.id+'" style="'
+    +'display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;'
+    +'-webkit-overflow-scrolling:touch;scrollbar-width:none;'
+    +'padding:2px 2px 6px;margin:0 -2px;">';
+
   ord.forEach(function(s){
     var sel=s.id===amb.selMat;
     var tx=s.photo?'':s.tx;
-    // Card: 68px fixo, imagem 40px, texto compactíssimo
+    // Card 100px de largura (≈2.3 por tela de 360px), altura total ~130px
     h+='<div onclick="pickMatAmb('+amb.id+',\''+s.id+'\')" style="'
-      +'flex-shrink:0;width:68px;cursor:pointer;border-radius:8px;overflow:hidden;position:relative;'
-      +'border:1.5px solid '+(sel?'var(--gold)':'rgba(255,255,255,.08)')+';'
-      +'background:'+(sel?'rgba(201,168,76,.09)':'var(--s3)')+';'
-      +'box-shadow:'+(sel?'0 0 8px rgba(201,168,76,.2)':'none')+';'
-      +'transition:border-color .12s,box-shadow .12s;">';
-    // Imagem
-    h+='<div style="width:100%;height:40px;overflow:hidden;background:var(--s4);position:relative;">';
+      +'flex:0 0 100px;cursor:pointer;border-radius:10px;overflow:hidden;'
+      +'border:1.5px solid '+(sel?'var(--gold)':'rgba(255,255,255,.07)')+';'
+      +'background:'+(sel?'rgba(201,168,76,.08)':'var(--s2)')+';'
+      +'box-shadow:'+(sel?'0 0 0 1px rgba(201,168,76,.15),0 2px 12px rgba(201,168,76,.15)':'none')+';'
+      +'transition:border-color .12s,box-shadow .12s;position:relative;">';
+
+    // Imagem — proporção paisagem baixa
+    h+='<div style="width:100%;height:64px;overflow:hidden;background:var(--s4);flex-shrink:0;">';
     if(s.photo){
       h+='<img src="'+s.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">';
     } else {
       h+='<div class="msw '+tx+'" style="width:100%;height:100%;"><div class="mshine"></div></div>';
     }
+    // Check — pequeno e discreto
     if(sel){
-      h+='<div style="position:absolute;top:3px;right:3px;background:var(--gold);color:#1a0800;'
-        +'border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;'
-        +'font-size:.42rem;font-weight:700;line-height:1;">✓</div>';
+      h+='<div style="position:absolute;top:5px;right:5px;'
+        +'width:15px;height:15px;border-radius:50%;'
+        +'background:var(--gold);color:#1a0800;'
+        +'display:flex;align-items:center;justify-content:center;'
+        +'font-size:.46rem;font-weight:800;line-height:1;">✓</div>';
     }
     h+='</div>';
-    // Texto
-    h+='<div style="padding:4px 5px 5px;">';
-    h+='<div style="font-size:.57rem;font-weight:700;color:var(--tx);line-height:1.2;'
+
+    // Rodapé do card
+    h+='<div style="padding:5px 7px 6px;">';
+    // Categoria em micro texto
+    h+='<div style="font-size:.47rem;color:var(--t4);letter-spacing:.5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.cat+'</div>';
+    // Nome
+    h+='<div style="font-size:.64rem;font-weight:700;color:var(--tx);line-height:1.2;'
       +'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nm+'</div>';
-    h+='<div style="font-size:.5rem;color:var(--t3);margin-top:1px;">R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
+    // Acabamento + preço numa linha
+    h+='<div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:3px;">';
+    h+='<span style="font-size:.47rem;color:var(--t4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;">'+s.fin+'</span>';
+    h+='<span style="font-size:.55rem;color:var(--gold2);font-weight:600;white-space:nowrap;flex-shrink:0;">R$'+s.pr.toLocaleString('pt-BR')+'</span>';
+    h+='</div>';
     h+='</div>';
     h+='</div>';
   });
+
   h+='</div>';
   return h;
 }
@@ -522,10 +510,18 @@ function renderAmbientes(){
       h+='</select></div>';
       h+='</div>';
     }
-    // STEP 2: Selecao de Pedra
-    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 8px;">② Pedra</div>';
-    h+='<div id="matbar-'+amb.id+'">'+buildMatBarHtml(amb)+'</div>';
-    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';margin-top:6px;">';
+    // STEP 2: Selecao de Pedra — carrossel sempre visível, integrado
+    h+='<div style="margin:10px 0 12px;">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+    h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">② Pedra</span>';
+    h+='<span id="mind-'+amb.id+'" style="font-size:.6rem;color:var(--t3);">';
+    if(ambMat){
+      h+=ambMat.nm+' · <span style="color:var(--gold2);">R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</span>';
+    } else {
+      h+='<span style="color:var(--t4);">selecione uma pedra</span>';
+    }
+    h+='</span>';
+    h+='</div>';
     h+=buildMatCarouselHtml(amb);
     h+='</div>';
     // Pecas
