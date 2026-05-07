@@ -34,42 +34,11 @@ function onFile(e){
 }
 
 // ═══ MATERIAL ═══
-function buildMat(){
-  var GRUPOS=[
-    {cat:'Granito Cinza',icon:'🩶'},
-    {cat:'Granito Preto',icon:'🖤'},
-    {cat:'Granito Branco',icon:'🤍'},
-    {cat:'Granito Verde',icon:'💚'},
-    {cat:'Mármore',icon:'🌿'},
-    {cat:'Travertino',icon:'🟤'},
-    {cat:'Quartzito',icon:'💎'},
-    {cat:'Ultra Compacto',icon:'⚡'}
-  ];
-  var h='';
-  GRUPOS.forEach(function(grp){
-    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat;});
-    if(!ss.length)return;
-    h+='<div class="mcat">'+grp.icon+' '+grp.cat+'</div>';
-    h+='<div class="mscroll">';
-    ss.forEach(function(s){
-      var on=s.id===selMat?'on':'';
-      h+='<div class="mc '+on+'" data-mat="'+s.id+'">';
-      h+='<div class="msw '+(s.photo?'':s.tx)+'">';
-      if(s.photo)h+='<img src="'+s.photo+'" alt="">';
-      h+='<div class="mshine"></div>';
-      h+='</div>';
-      h+='<div class="mbody">';
-      h+='<div class="mnm">'+s.nm+'</div>';
-      h+='<div class="mfin">'+s.fin+' · R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
-      h+='</div></div>';
-    });
-    h+='</div>';
-  });
-  document.getElementById('matArea').innerHTML=h;
-}
-function pickMat(id){selMat=id;document.querySelectorAll('.mc').forEach(function(c){c.classList.toggle('on',c.dataset.mat===id);});}
+function buildMat(){renderAmbientes();}
+function pickMat(id){selMat=id;}
 
 // ═══ SERVIÇOS ═══
+
 var SV_DEFS={
 'Cozinha':[
   {g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'},{k:'s_boleada',l:'Sainha Boleada',u:'sf'},{k:'s_slim',l:'Sainha Slim',u:'sf'}]},
@@ -357,7 +326,7 @@ function pickMatAmb(ambId,stoneId){
   if(!amb)return;
   amb.selMat=stoneId;
   var panel=document.getElementById('matpick-'+ambId);
-  if(panel)panel.innerHTML=buildMatCatalogHtml(amb);
+  if(panel){panel.innerHTML=buildMatCatalogHtml(amb);panel.style.display='none';}
   var bar=document.getElementById('matbar-'+ambId);
   if(bar)bar.innerHTML=buildMatBarHtml(amb);
 }
@@ -365,18 +334,23 @@ function pickMatAmb(ambId,stoneId){
 function buildMatBarHtml(amb){
   var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;});
   if(!ambMat){
-    return '<div style="background:rgba(255,60,60,.08);border:1px solid rgba(255,80,80,.2);border-radius:9px;padding:10px 14px;font-size:.73rem;color:#ff6b6b;cursor:pointer;" onclick="toggleMatPick('+amb.id+')"><span style="margin-right:6px;">⚠️</span>Nenhuma pedra selecionada — toque para escolher</div>';
+    return '<div onclick="toggleMatPick('+amb.id+')" style="display:flex;align-items:center;gap:10px;background:var(--s2);border:1px dashed rgba(201,168,76,.25);border-radius:10px;padding:10px 13px;cursor:pointer;">'
+      +'<div style="width:36px;height:36px;min-width:36px;border-radius:7px;background:var(--s3);display:grid;place-items:center;font-size:1rem;">🪨</div>'
+      +'<div style="flex:1;"><div style="font-size:.74rem;font-weight:600;color:var(--t2);">Escolher pedra</div>'
+      +'<div style="font-size:.6rem;color:var(--t4);margin-top:1px;">Toque para selecionar</div></div>'
+      +'<div style="font-size:.65rem;color:var(--t4);">▾</div>'
+      +'</div>';
   }
   var tx=ambMat.photo?'':ambMat.tx;
-  return '<div style="display:flex;align-items:center;gap:10px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-radius:10px;padding:10px 13px;cursor:pointer;" onclick="toggleMatPick('+amb.id+')">'
-    +'<div class="msw '+tx+'" style="width:42px;height:42px;min-width:42px;border-radius:8px;flex-shrink:0;">'
-    +(ambMat.photo?'<img src="'+ambMat.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">':'' )
+  return '<div onclick="toggleMatPick('+amb.id+')" style="display:flex;align-items:center;gap:10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.28);border-radius:10px;padding:9px 12px;cursor:pointer;">'
+    +'<div class="msw '+tx+'" style="width:38px;height:38px;min-width:38px;border-radius:7px;flex-shrink:0;overflow:hidden;">'
+    +(ambMat.photo?'<img src="'+ambMat.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;">':'' )
     +'<div class="mshine"></div></div>'
     +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-size:.76rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ambMat.nm+'</div>'
-      +'<div style="font-size:.63rem;color:var(--gold2);margin-top:1px;">'+ambMat.fin+' · R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</div>'
+      +'<div style="font-size:.75rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ambMat.nm+'</div>'
+      +'<div style="font-size:.61rem;color:var(--gold2);margin-top:1px;">'+ambMat.fin+' · R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</div>'
     +'</div>'
-    +'<div style="font-size:.65rem;color:var(--t3);white-space:nowrap;">Trocar ▾</div>'
+    +'<div style="font-size:.62rem;color:var(--t3);flex-shrink:0;">Trocar ▾</div>'
   +'</div>';
 }
 
@@ -388,52 +362,81 @@ function toggleMatPick(ambId){
 }
 
 function buildMatCatalogHtml(amb){
-  var GRUPOS=[
-    {cat:'Granito Cinza',icon:'⚪'},
-    {cat:'Granito Preto',icon:'●'},
-    {cat:'Granito Branco',icon:'○'},
-    {cat:'Granito Verde',icon:'💚'},
-    {cat:'Mármore',icon:'🌿'},
-    {cat:'Travertino',icon:'🟤'},
-    {cat:'Quartzito',icon:'💎'},
-    {cat:'Ultra Compacto',icon:'⚡'}
-  ];
+  // Filtragem inteligente por tipo de ambiente
+  var PREF={
+    'Cozinha':     ['Granito Cinza','Granito Preto','Granito Branco','Granito Verde','Ultra Compacto','Quartzito','Mármore','Travertino'],
+    'Banheiro':    ['Mármore','Quartzito','Granito Branco','Granito Cinza','Travertino','Ultra Compacto','Granito Preto','Granito Verde'],
+    'Lavabo':      ['Mármore','Quartzito','Travertino','Granito Branco','Granito Cinza','Ultra Compacto','Granito Preto','Granito Verde'],
+    'Escada':      ['Granito Preto','Granito Cinza','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
+    'Soleira':     ['Granito Preto','Granito Cinza','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
+    'Peitoril':    ['Granito Cinza','Granito Branco','Granito Preto','Granito Verde','Mármore','Quartzito','Travertino','Ultra Compacto'],
+    'Fachada':     ['Granito Cinza','Granito Preto','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
+    'Túmulo':      ['Granito Preto','Granito Cinza','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
+    'Outro':       ['Granito Cinza','Granito Preto','Granito Branco','Granito Verde','Mármore','Quartzito','Travertino','Ultra Compacto']
+  };
+  var ordem=PREF[amb.tipo]||PREF['Outro'];
+  // Monta lista ordenada por preferência
+  var todas=CFG.stones.filter(function(s){return s.pr>0;});
+  var ordenadas=[];
+  ordem.forEach(function(cat){
+    todas.filter(function(s){return s.cat===cat;}).forEach(function(s){ordenadas.push(s);});
+  });
+  // Pedras sem categoria conhecida ao final
+  todas.forEach(function(s){if(ordenadas.indexOf(s)===-1)ordenadas.push(s);});
+
+  if(!ordenadas.length){
+    return '<div style="text-align:center;padding:24px 16px;color:var(--t3);">'
+      +'<div style="font-size:1.6rem;margin-bottom:8px;">🪨</div>'
+      +'<div style="font-size:.78rem;font-weight:600;margin-bottom:3px;">Nenhuma pedra cadastrada</div>'
+      +'<div style="font-size:.65rem;">Vá em Config → Pedras para adicionar</div></div>';
+  }
+
+  // Agrupa por cat mantendo a ordem de preferência
+  var grupos=[];
+  var catsSeen=[];
+  ordenadas.forEach(function(s){
+    if(catsSeen.indexOf(s.cat)===-1){catsSeen.push(s.cat);grupos.push({cat:s.cat,stones:[]});}
+    grupos[grupos.length-1].stones.push(s);
+  });
+  // Corrige: cada stone vai ao grupo certo
+  grupos=[];
+  catsSeen.forEach(function(cat){
+    grupos.push({cat:cat,stones:ordenadas.filter(function(s){return s.cat===cat;})});
+  });
+
   var h='';
-  var hasAny=false;
-  GRUPOS.forEach(function(grp){
-    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat&&s.pr>0;});
-    if(!ss.length)return;
-    hasAny=true;
-    h+='<div style="font-size:.55rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:12px 0 8px;">'+grp.icon+' '+grp.cat+'</div>';
-    h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:4px;">';
-    ss.forEach(function(s){
+  grupos.forEach(function(grp){
+    if(!grp.stones.length)return;
+    h+='<div style="font-size:.5rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);font-weight:700;margin:10px 0 6px;opacity:.8;">'+grp.cat+'</div>';
+    h+='<div style="display:flex;overflow-x:auto;gap:7px;margin:0 -12px;padding:0 12px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">';
+    grp.stones.forEach(function(s){
       var sel=s.id===amb.selMat;
-      h+='<div onclick="pickMatAmb('+amb.id+',\''+(s.id)+'\')" style="cursor:pointer;border-radius:12px;border:2px solid '+(sel?'var(--gold)':'var(--bd2)')+';background:'+(sel?'rgba(201,168,76,.10)':'var(--s3)')+';overflow:hidden;transition:all .15s;position:relative;">';
-      h+='<div style="width:100%;height:80px;background:var(--s4);overflow:hidden;position:relative;">';
+      h+='<div onclick="pickMatAmb('+amb.id+',\''+s.id+'\')" style="'
+        +'flex-shrink:0;width:80px;cursor:pointer;border-radius:10px;border:2px solid '+(sel?'var(--gold)':'rgba(255,255,255,.07)')+';'
+        +'background:'+(sel?'rgba(201,168,76,.10)':'var(--s3)')+';overflow:hidden;position:relative;'
+        +'box-shadow:'+(sel?'0 0 0 1px rgba(201,168,76,.3),0 4px 16px rgba(201,168,76,.12)':'none')+';'
+        +'transition:border-color .15s,box-shadow .15s;">';
+      // Imagem
+      h+='<div style="width:100%;height:56px;overflow:hidden;position:relative;background:var(--s4);">';
       if(s.photo){
         h+='<img src="'+s.photo+'" alt="'+s.nm+'" style="width:100%;height:100%;object-fit:cover;display:block;">';
       } else {
         h+='<div class="msw '+s.tx+'" style="width:100%;height:100%;"><div class="mshine"></div></div>';
       }
+      // Check selecionado
       if(sel){
-        h+='<div style="position:absolute;top:5px;right:5px;background:var(--gold);color:#1a0800;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;">✓</div>';
+        h+='<div style="position:absolute;top:4px;right:4px;background:var(--gold);color:#1a0800;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;line-height:1;">✓</div>';
       }
       h+='</div>';
-      h+='<div style="padding:8px 9px;">';
-      h+='<div style="font-size:.72rem;font-weight:700;color:var(--tx);line-height:1.3;margin-bottom:2px;">'+s.nm+'</div>';
-      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">'+s.fin+'</div>';
-      h+='<div style="background:var(--gdim);border:1px solid var(--gold3);border-radius:7px;padding:6px 8px;display:flex;justify-content:space-between;align-items:baseline;">';
-      h+='<span style="font-size:.55rem;color:var(--gold3);letter-spacing:1px;text-transform:uppercase;">Preço/m²</span>';
-      h+='<span style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--gold2);">R$ '+s.pr.toLocaleString("pt-BR")+'</span>';
-      h+='</div>';
+      // Info
+      h+='<div style="padding:5px 6px 6px;">';
+      h+='<div style="font-size:.62rem;font-weight:700;color:var(--tx);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+s.nm+'</div>';
+      h+='<div style="font-size:.55rem;color:var(--gold2);font-weight:600;margin-top:1px;">R$ '+s.pr.toLocaleString('pt-BR')+'/m²</div>';
       h+='</div>';
       h+='</div>';
     });
     h+='</div>';
   });
-  if(!hasAny){
-    h='<div style="text-align:center;padding:30px 16px;color:var(--t3);"><div style="font-size:2rem;margin-bottom:8px;">🪸</div><div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Nenhuma pedra cadastrada</div><div style="font-size:.72rem;">Vá em Config → Pedras para adicionar</div></div>';
-  }
   return h;
 }
 
@@ -535,7 +538,7 @@ function renderAmbientes(){
     // STEP 2: Selecao de Pedra
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 8px;">② Pedra</div>';
     h+='<div id="matbar-'+amb.id+'">'+buildMatBarHtml(amb)+'</div>';
-    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:8px;max-height:380px;overflow-y:auto;">';
+    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';margin-top:8px;">';
     h+=buildMatCatalogHtml(amb);
     h+='</div>';
     // Pecas
