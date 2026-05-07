@@ -2068,13 +2068,6 @@ SV_DEFS.Escada=[{g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l
 SV_DEFS.Fachada=[{g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
 SV_DEFS.Outro=SV_DEFS.Cozinha;
 SV_DEFS['🏊 Borda Piscina']=[
-  {g:'Acabamento da Borda',its:[
-    {k:'bp_boleada',   l:'Boleada',         u:'ml'},
-    {k:'bp_antiderap', l:'Antiderrapante',  u:'ml'},
-    {k:'bp_pingad',    l:'Pingadeira',      u:'ml'},
-    {k:'bp_mcana',     l:'Meia Cana',       u:'ml'},
-    {k:'bp_chanfro',   l:'Chanfro',         u:'ml'}
-  ]},
   {g:'Cantos / Curvas',its:[
     {k:'bp_c_arred',   l:'Cantos Arredondados', u:'un'},
     {k:'bp_c_curva',   l:'Curvas Especiais',    u:'un'},
@@ -2497,9 +2490,42 @@ function renderAmbientes(){
       h+='</div>';
     }
     if(amb.tipo==='🏊 Borda Piscina'){
+      if(!amb.bordaAcb)amb.bordaAcb={tipo:'polida',lados:0};
+      var ba=amb.bordaAcb;
+      var baTipoDef=BP_TIPOS_ACB.find(function(t){return t.k===ba.tipo;})||BP_TIPOS_ACB[0];
+      var baML=_calcBordaAcbMl(amb,ba.lados);
+      var baVal=baML*baTipoDef.pr;
+      var baLadoLabels=['Sem acabamento','1 lateral maior','2 laterais maiores','3 lados','4 lados'];
       h+='<div style="background:rgba(100,180,255,.06);border:1px solid rgba(100,180,255,.22);border-radius:10px;padding:12px;margin:10px 0;">';
-      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:8px;">🏊 Como preencher as peças</div>';
-      h+='<div style="font-size:.65rem;color:var(--t3);line-height:1.6;">Adicione <b>uma peça por lado</b> da piscina:<br>• <b>Comprimento</b> = tamanho do lado em cm (ex: 800 para 8m)<br>• <b>Largura</b> = largura da borda em cm (ex: 25)<br>Em Serviços, informe o total de metros nos acabamentos.</div>';
+      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:10px;">🏊 Acabamento da Borda</div>';
+      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">Tipo de acabamento</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;">';
+      BP_TIPOS_ACB.forEach(function(t){
+        var sel=ba.tipo===t.k;
+        h+='<div onclick="updBordaAcb('+amb.id+',\'tipo\',\''+t.k+'\')" style="cursor:pointer;padding:5px 11px;border-radius:7px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.15)')+';background:'+(sel?'rgba(100,180,255,.15)':'var(--s3)')+';font-size:.7rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t3)')+';">';
+        h+=t.l+(t.pr>0?' <span style="font-size:.55rem;color:var(--t4);">R$'+t.pr+'/m</span>':'');
+        h+='</div>';
+      });
+      h+='</div>';
+      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">Lados a acabar</div>';
+      h+='<div style="display:flex;gap:4px;margin-bottom:10px;">';
+      [0,1,2,3,4].forEach(function(v){
+        var sel=ba.lados===v;
+        var ll=['Sem','1 Lat.','2 Lat.','3 Lados','4 Lados'][v];
+        h+='<div onclick="updBordaAcb('+amb.id+',\'lados\','+v+')" style="cursor:pointer;flex:1;text-align:center;padding:6px 2px;border-radius:8px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.15)')+';background:'+(sel?'rgba(100,180,255,.15)':'var(--s3)')+';font-size:.62rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t3)')+';">'+ll+'</div>';
+      });
+      h+='</div>';
+      if(ba.lados>0){
+        h+='<div style="background:var(--s2);border-radius:8px;padding:8px 10px;">';
+        h+='<div style="font-size:.68rem;color:#6ea4ff;font-weight:600;">→ '+baTipoDef.l+' em '+baLadoLabels[ba.lados]+': <span style="color:var(--tx);font-weight:700;">'+baML.toFixed(2)+'m</span></div>';
+        if(baTipoDef.pr>0){
+          h+='<div style="font-size:.62rem;color:var(--t3);margin-top:3px;">R$ '+baTipoDef.pr+'/m × '+baML.toFixed(2)+'m = <span style="color:var(--gold2);font-weight:700;">R$ '+baVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>';
+        } else {
+          h+='<div style="font-size:.62rem;color:var(--t4);margin-top:2px;">Acabamento polida — sem custo extra de M.O.</div>';
+        }
+        h+='</div>';
+      }
+      h+='<div style="font-size:.57rem;color:var(--t4);margin-top:8px;line-height:1.5;">💡 <b>Comprimento</b> = lado da piscina em cm &nbsp;·&nbsp; <b>Largura</b> = largura da borda em cm</div>';
       h+='</div>';
     }
     // STEP 2: Selecao de Pedra
@@ -2537,6 +2563,33 @@ function renderAmbientes(){
   container.innerHTML=h;
   }catch(e2){console.error('renderAmbientes:',e2);toast('Erro: '+e2.message);}
 }
+// ─── BORDA PISCINA: cálculo automático de ML por lados ───────────
+var BP_TIPOS_ACB=[
+  {k:'polida',    l:'Polida',         pr:0},
+  {k:'escovada',  l:'Escovada',       pr:15},
+  {k:'flameada',  l:'Flameada',       pr:18},
+  {k:'antiderap', l:'Antiderrapante', pr:22},
+  {k:'boleada',   l:'Boleada',        pr:25}
+];
+function _calcBordaAcbMl(amb,lados){
+  if(!lados)return 0;
+  var mlL=0,mlS=0;
+  (amb.pecas||[]).forEach(function(p){
+    if(p.w)mlL+=(p.w/100)*(p.q||1);
+    if(p.h)mlS+=(p.h/100)*(p.q||1);
+  });
+  var nL=lados>=2?2:1;
+  var nS=lados>=4?2:lados>=3?1:0;
+  return mlL*nL+mlS*nS;
+}
+function updBordaAcb(ambId,prop,val){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(!amb.bordaAcb)amb.bordaAcb={tipo:'polida',lados:0};
+  amb.bordaAcb[prop]=val;
+  renderAmbientes();
+}
+
 function buildSVHtml(amb){
   var g=SV_DEFS[amb.tipo]||SV_DEFS.Cozinha;
   var sv=amb.svState||{};
@@ -2748,6 +2801,27 @@ function calcular(){
       if(val>0){acT+=val;acL.push({l:label,v:val});}
       acN.push(label);
     });
+
+    // Borda Piscina: acabamento lateral automático
+    if(tipo==='🏊 Borda Piscina'&&amb.bordaAcb){
+      var baLd=amb.bordaAcb.lados||0;
+      var baTp=amb.bordaAcb.tipo||'polida';
+      if(baLd>0){
+        var baML2=_calcBordaAcbMl(amb,baLd);
+        var baDef=BP_TIPOS_ACB.find(function(t){return t.k===baTp;})||BP_TIPOS_ACB[0];
+        var baLdStr=['','1 lateral','2 laterais','3 lados','4 lados'][baLd]||'';
+        if(baML2>0){
+          if(baDef.pr>0){
+            var baVl=baML2*baDef.pr;
+            acT+=baVl;
+            acL.push({l:'Acabamento '+baDef.l+' ('+baLdStr+', '+baML2.toFixed(2)+'m)',v:baVl});
+            acN.push('Acab. '+baDef.l+' '+baLdStr);
+          } else {
+            acN.push('Acab. polida '+baLdStr+' ('+baML2.toFixed(2)+'m)');
+          }
+        }
+      }
+    }
 
     totalM2+=m2;totalAcT+=acT;
     allAcN=allAcN.concat(acN);
