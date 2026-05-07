@@ -2100,6 +2100,60 @@ SV_DEFS.Escada=[{g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l
 SV_DEFS.Fachada=[{g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
 SV_DEFS.Outro=SV_DEFS.Cozinha;
 
+SV_DEFS.Tumulo=[
+  {g:'🪨 Estrutura de Pedra',its:[
+    {k:'tum_tampa',  l:'Tampa',                  u:'sf'},
+    {k:'tum_lat',    l:'Laterais (×2)',           u:'sf'},
+    {k:'tum_front',  l:'Frontais (×2)',           u:'sf'},
+    {k:'tum_base',   l:'Base',                    u:'sf'},
+    {k:'tum_det',    l:'Detalhe Superior',        u:'sf'},
+    {k:'tum_sainha', l:'Sainha Frontal',          u:'sf'},
+    {k:'tum_mol',    l:'Moldura',                 u:'ml'},
+    {k:'tum_ping',   l:'Pingadeira',              u:'ml'}
+  ]},
+  {g:'⚰️ Gavetas / Compartimentos',its:[
+    {k:'tum_gav1',   l:'Frente de Gaveta — 1ª',  u:'sf'},
+    {k:'tum_gav2',   l:'Frente de Gaveta — 2ª',  u:'sf'},
+    {k:'tum_gav3',   l:'Frente de Gaveta — 3ª',  u:'sf'}
+  ]},
+  {g:'🪦 Lápide / Plaquinha / Foto',its:[
+    {k:'tum_lapide', l:'Lápide de Granito',       u:'un', fx:1},
+    {k:'tum_plaq',   l:'Plaquinha Gravada',       u:'un', fx:1},
+    {k:'tum_foto',   l:'Foto em Porcelana',       u:'un', fx:1},
+    {k:'tum_cruz',   l:'Cruz em Granito',         u:'un', fx:1}
+  ]},
+  {g:'🔧 Acabamentos',its:[
+    {k:'tum_rec',    l:'Recorte / Furo',          u:'un', fx:0},
+    {k:'tum_pol',    l:'Polimento Extra',          u:'un', fx:1},
+    {k:'tum_bisel',  l:'Borda Biselada',          u:'ml'}
+  ]},
+  {g:'🧱 Construção — Pedreiro',its:[
+    {k:'tum_fund',   l:'Fundação',                u:'livre'},
+    {k:'tum_lev',    l:'Levantamento Alvenaria',  u:'livre'},
+    {k:'tum_reb',    l:'Reboco / Chapisco',       u:'livre'},
+    {k:'tum_conc',   l:'Concreto Armado',         u:'livre'},
+    {k:'tum_cpiso',  l:'Contra-piso',             u:'livre'},
+    {k:'tum_acob',   l:'Acabamento Final Obra',   u:'livre'}
+  ]},
+  {g:'🪣 Materiais de Construção',its:[
+    {k:'tum_cim',    l:'Cimento / Areia',         u:'livre'},
+    {k:'tum_cola',   l:'Cola p/ Granito',         u:'livre'},
+    {k:'tum_rej',    l:'Rejunte',                 u:'livre'},
+    {k:'tum_ferro',  l:'Ferro / Tela',            u:'livre'},
+    {k:'tum_tijolo', l:'Tijolos / Blocos',        u:'livre'},
+    {k:'tum_frete',  l:'Frete / Entrega Material',u:'livre'}
+  ]},
+  {g:'🔨 Mão de Obra',its:[
+    {k:'tum_mont',   l:'Montagem / Instalação',   u:'un', fx:1},
+    {k:'tum_montc',  l:'Instalação Complexa',     u:'un', fx:1}
+  ]},
+  {g:'Deslocamento',its:[
+    {k:'desl_cid',   l:'Na cidade',               u:'livre'},
+    {k:'desl_for',   l:'Fora da cidade',          u:'km', fx:0}
+  ]}
+];
+SV_DEFS['Túmulo'] = SV_DEFS.Tumulo;
+
 // Acessórios — adicionado em todos os tipos
 // Acessórios ficam no catálogo próprio, não nos serviços do orçamento
 
