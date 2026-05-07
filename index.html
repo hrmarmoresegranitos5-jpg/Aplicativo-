@@ -1209,7 +1209,6 @@ function openApp(pg){
         <div class="f"><input id="oEnd" placeholder="Endereço / Bairro (opcional)" type="text"></div>
         <div class="f"><input id="oObs" placeholder="Observações do projeto (opcional)" type="text"></div>
       </div>
-      <div class="sec mt" style="opacity:.45;pointer-events:none;position:relative;"><div class="sl" style="display:flex;align-items:center;gap:6px;">Pedra Padrão <span style="font-size:.55rem;color:var(--gold3);background:rgba(201,168,76,.12);padding:2px 7px;border-radius:20px;font-weight:600;letter-spacing:1px;">Escolha por ambiente abaixo ↓</span></div><div id="matArea"></div><div style="position:absolute;inset:0;"></div></div>
 
       <!-- AMBIENTES: cada um tem tipo + peças + serviços -->
       <div class="sec mt">
@@ -2035,42 +2034,11 @@ function onFile(e){
 }
 
 // ═══ MATERIAL ═══
-function buildMat(){
-  var GRUPOS=[
-    {cat:'Granito Cinza',icon:'🩶'},
-    {cat:'Granito Preto',icon:'🖤'},
-    {cat:'Granito Branco',icon:'🤍'},
-    {cat:'Granito Verde',icon:'💚'},
-    {cat:'Mármore',icon:'🌿'},
-    {cat:'Travertino',icon:'🟤'},
-    {cat:'Quartzito',icon:'💎'},
-    {cat:'Ultra Compacto',icon:'⚡'}
-  ];
-  var h='';
-  GRUPOS.forEach(function(grp){
-    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat;});
-    if(!ss.length)return;
-    h+='<div class="mcat">'+grp.icon+' '+grp.cat+'</div>';
-    h+='<div class="mscroll">';
-    ss.forEach(function(s){
-      var on=s.id===selMat?'on':'';
-      h+='<div class="mc '+on+'" data-mat="'+s.id+'">';
-      h+='<div class="msw '+(s.photo?'':s.tx)+'">';
-      if(s.photo)h+='<img src="'+s.photo+'" alt="">';
-      h+='<div class="mshine"></div>';
-      h+='</div>';
-      h+='<div class="mbody">';
-      h+='<div class="mnm">'+s.nm+'</div>';
-      h+='<div class="mfin">'+s.fin+' · R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
-      h+='</div></div>';
-    });
-    h+='</div>';
-  });
-  document.getElementById('matArea').innerHTML=h;
-}
-function pickMat(id){selMat=id;document.querySelectorAll('.mc').forEach(function(c){c.classList.toggle('on',c.dataset.mat===id);});}
+function buildMat(){renderAmbientes();}
+function pickMat(id){selMat=id;}
 
 // ═══ SERVIÇOS ═══
+
 var SV_DEFS={
 'Cozinha':[
   {g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'},{k:'s_boleada',l:'Sainha Boleada',u:'sf'},{k:'s_slim',l:'Sainha Slim',u:'sf'}]},
