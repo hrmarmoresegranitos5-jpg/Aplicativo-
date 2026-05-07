@@ -152,8 +152,8 @@ SV_DEFS.Tumulo=[
   ]}
 ];
 
-// Túmulo usa o sistema padrão (sainha, acabamentos, etc.) + serviços específicos de túmulo
-SV_DEFS['Túmulo'] = SV_DEFS.Cozinha.concat(SV_DEFS.Tumulo);
+// Túmulo usa APENAS seus serviços específicos (não mistura com Cozinha)
+SV_DEFS['Túmulo'] = SV_DEFS.Tumulo;
 
 function getSVGrp(){return SV_DEFS[document.getElementById('oTipo').value]||SV_DEFS.Cozinha;}
 function getIt(k){var g=getSVGrp();for(var i=0;i<g.length;i++){for(var j=0;j<g[i].its.length;j++){if(g[i].its[j].k===k)return g[i].its[j];}}return null;}
