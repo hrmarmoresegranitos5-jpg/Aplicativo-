@@ -142,7 +142,8 @@ function orcRefazer(id, e) {
         selCuba:snap.selCuba||null,
         svState:JSON.parse(JSON.stringify(snap.svState||{})),
         acState:JSON.parse(JSON.stringify(snap.acState||{})),
-        tumExtra:snap.tumExtra?JSON.parse(JSON.stringify(snap.tumExtra)):null
+        tumExtra:snap.tumExtra?JSON.parse(JSON.stringify(snap.tumExtra)):null,
+        selMat:snap.selMat||mat.id||null
       });
     });
   } else {
