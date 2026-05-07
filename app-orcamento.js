@@ -68,6 +68,30 @@ SV_DEFS.Escada=[{g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l
 SV_DEFS.Fachada=[{g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
 SV_DEFS.Outro=SV_DEFS.Cozinha;
 
+// ─── BORDA DE PISCINA ────────────────────────────────────────────
+SV_DEFS['🏊 Borda Piscina']=[
+  {g:'Acabamento da Borda',its:[
+    {k:'bp_boleada',    l:'Boleada',         u:'ml'},
+    {k:'bp_antiderap',  l:'Antiderrapante',  u:'ml'},
+    {k:'bp_pingad',     l:'Pingadeira',      u:'ml'},
+    {k:'bp_mcana',      l:'Meia Cana',       u:'ml'},
+    {k:'bp_chanfro',    l:'Chanfro',         u:'ml'}
+  ]},
+  {g:'Cantos / Curvas',its:[
+    {k:'bp_c_arred',    l:'Cantos Arredondados', u:'un'},
+    {k:'bp_c_curva',    l:'Curvas Especiais',    u:'un'},
+    {k:'bp_c_infinita', l:'Borda Infinita',      u:'un'}
+  ]},
+  {g:'Instalação',its:[
+    {k:'inst',  l:'Instalação Padrão',   u:'un',fx:1},
+    {k:'inst_c',l:'Instalação Complexa', u:'un',fx:1}
+  ]},
+  {g:'Deslocamento',its:[
+    {k:'desl_cid',l:'Na cidade',      u:'livre'},
+    {k:'desl_for',l:'Fora da cidade', u:'km',fx:0}
+  ]}
+];
+
 SV_DEFS.Tumulo=[
   {g:'🪨 Estrutura de Pedra',its:[
     {k:'tum_tampa',  l:'Tampa',                  u:'sf'},
@@ -319,7 +343,7 @@ function pickCuba(id,tipo){
 }
 
 // ═══ AMBIENTES ═══
-var TIPOS_AMBIENTE=['Cozinha','Banheiro','Lavabo','Soleira','Peitoril','Escada','Fachada','Túmulo','Outro'];
+var TIPOS_AMBIENTE=['Cozinha','Banheiro','Lavabo','Soleira','Peitoril','Escada','Fachada','Túmulo','🏊 Borda Piscina','Outro'];
 
 function pickMatAmb(ambId,stoneId){
   var amb=ambientes.find(function(a){return a.id==ambId;});
@@ -350,6 +374,7 @@ function buildMatCarouselHtml(amb){
     'Peitoril': ['Granito Cinza','Granito Branco','Granito Preto','Granito Verde','Mármore','Quartzito','Travertino','Ultra Compacto'],
     'Fachada':  ['Granito Cinza','Granito Preto','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
     'Túmulo':   ['Granito Preto','Granito Cinza','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
+    '🏊 Borda Piscina':['Granito Cinza','Granito Preto','Granito Verde','Granito Branco','Quartzito','Mármore','Travertino','Ultra Compacto'],
     'Outro':    ['Granito Cinza','Granito Preto','Granito Branco','Granito Verde','Mármore','Quartzito','Travertino','Ultra Compacto']
   };
   var ordem=PREF[amb.tipo]||PREF['Outro'];
@@ -510,7 +535,17 @@ function renderAmbientes(){
       h+='</select></div>';
       h+='</div>';
     }
-    // STEP 2: Selecao de Pedra — carrossel sempre visível, integrado
+    if(amb.tipo==='🏊 Borda Piscina'){
+      h+='<div style="background:rgba(100,180,255,.06);border:1px solid rgba(100,180,255,.22);border-radius:10px;padding:12px;margin:10px 0;">';
+      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:8px;">🏊 Como preencher as peças</div>';
+      h+='<div style="font-size:.65rem;color:var(--t3);line-height:1.6;">';
+      h+='Adicione <b>uma peça por lado</b> da piscina:<br>';
+      h+='• <b>Comprimento</b> = tamanho do lado em cm (ex: 800 para 8m)<br>';
+      h+='• <b>Largura</b> = largura da borda em cm (ex: 25)<br>';
+      h+='Em Serviços, informe o total de metros lineares nos acabamentos.';
+      h+='</div>';
+      h+='</div>';
+    }
     h+='<div style="margin:10px 0 12px;">';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
     h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">② Pedra</span>';
