@@ -1,67 +1,32 @@
 # HR Mármores e Granitos — Sistema de Gestão
 
-## Estrutura de Arquivos
+Sistema de orçamentos, agenda e finanças para marmoraria.
 
-```
-hr-marmores/
-├── index.html          ← Página principal (HTML + carrega todos os JS)
-├── styles.css          ← Todo o CSS (estilos, animações, layout)
-├── manifest.json       ← PWA manifest (já existente)
-├── sw.js               ← Service Worker (já existente)
-├── icon-192.png        ← Ícone do app (já existente)
-└── js/
-    ├── data.js         ← Dados: imagens cubas (base64), DB, SYNC Supabase, DEF_*
-    ├── app.js          ← Init, layout engine, navegação, dispatch de eventos
-    ├── orcamento.js    ← Material, ambientes, serviços, cálculo do orçamento
-    ├── pdf-agenda.js   ← Geração de PDF, agenda (salvar, renderizar, jobs)
-    ├── financas.js     ← Finanças (lançamentos, saldo, custos fixos)
-    ├── catalogos.js    ← Catálogo pedras/cubas/acessórios, empresa, config
-    ├── historico.js    ← Histórico de orçamentos (filtro, editar, copiar)
-    ├── contrato.js     ← Geração de contrato PDF completo
-    └── pwa.js          ← PWA install, service worker, micro-interactions
-```
+## 🚀 Como usar
 
-## Ordem de carregamento (importante)
+Abra o arquivo `index.html` no navegador. Funciona 100% offline.
 
-Os scripts são carregados nesta ordem no `index.html`:
+## 📱 Instalar como app (PWA)
 
-1. `data.js` — precisa ser o primeiro (define CUBA_IMGS, DB, CFG, SYNC, DEF_*)
-2. `app.js` — init geral, depende de data.js
-3. `orcamento.js` — depende de app.js e data.js
-4. `pdf-agenda.js` — depende de orcamento.js
-5. `financas.js` — independente, só precisa de DB
-6. `catalogos.js` — depende de CFG
-7. `historico.js` — depende de DB
-8. `contrato.js` — depende de pendQ e CFG
-9. `pwa.js` — independente, último a carregar
+No celular: toque em **Compartilhar → Adicionar à tela inicial**.
 
-## Como editar cada módulo
+## 🔐 Acesso
 
-| O que quer editar | Arquivo |
-|---|---|
-| Estilo/layout/cores | `styles.css` |
-| Preços padrão das pedras | `js/data.js` → `DEF_STONES` |
-| Preços padrão dos serviços | `js/data.js` → `DEF_SV` |
-| Dados das cubas de cozinha | `js/data.js` → `DEF_COZ` |
-| Dados das cubas de banheiro | `js/data.js` → `DEF_LAV` |
-| Dados da empresa | `js/data.js` → `DEF_EMP` |
-| Sync Supabase | `js/data.js` → `SYNC` |
-| Navegação entre páginas | `js/app.js` → `go()`, `dispatch()` |
-| Layout portrait/landscape | `js/app.js` → `setLayout()` |
-| Cálculo do orçamento | `js/orcamento.js` → `calcular()` |
-| Ambientes e serviços | `js/orcamento.js` → `renderAmbientes()` |
-| Geração PDF orçamento | `js/pdf-agenda.js` → `gerarPDF()` |
-| Agenda de serviços | `js/pdf-agenda.js` → `renderAg()`, `saveJob()` |
-| Finanças e saldo | `js/financas.js` → `renderFin()` |
-| Catálogo pedras/cubas | `js/catalogos.js` → `buildCatalog()`, `buildCubaList()` |
-| Configurações (edição) | `js/catalogos.js` → `buildCfg()` |
-| Histórico de orçamentos | `js/historico.js` → `renderOrc()`, `filterOrc()` |
-| Geração de contrato | `js/contrato.js` → `gerarContrato()` |
-| PWA e instalação | `js/pwa.js` |
-| HTML das páginas/modais | `index.html` |
+- **Proprietário** — senha: configurável em Empresa → Config  
+- **Funcionário** — acesso apenas à Agenda
 
-## GitHub Pages
+## 🌐 Hospedar no GitHub Pages (conexão BB futura)
 
-Para hospedar no GitHub Pages, basta colocar todos os arquivos na raiz do repositório (ou pasta `/docs`) e ativar o GitHub Pages nas configurações do repo.
+1. Faça upload destes arquivos para um repositório GitHub
+2. Vá em **Settings → Pages → Source → main branch**
+3. Acesse via `https://seu-usuario.github.io/hr-marmores`
+4. Use a URL gerada nas configurações do app para conectar ao Banco do Brasil
 
-O arquivo `index.html` já referencia os JS com caminho relativo `js/arquivo.js`, então funciona em qualquer subdiretório.
+## 📂 Arquivos
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `index.html` | App completo (HTML + CSS + JS) |
+| `manifest.json` | Configuração PWA |
+| `sw.js` | Service Worker (offline) |
+

@@ -71,8 +71,8 @@ html{height:100%;height:-webkit-fill-available;}body{height:100%;height:-webkit-
 .hsub{font-size:.52rem;color:var(--t4);letter-spacing:2px;text-transform:uppercase;display:block;margin-top:1px;}
 .hdt{font-size:.6rem;color:var(--t4);}
 #pages{position:absolute;left:0;right:0;bottom:0;overflow:hidden;}
-.pg{display:none;position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:1;}
-.pg.on{display:block;z-index:1;}
+.pg{display:none;position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.pg.on{display:block;}
 .pg::-webkit-scrollbar{width:2px;}
 .pg::-webkit-scrollbar-thumb{background:var(--s4);}
 /* NAV */

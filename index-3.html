@@ -2805,18 +2805,20 @@ function gerarPDF(){
   if(q.ambSnap&&q.ambSnap.length){
     q.ambSnap.forEach(function(snap,idx){
       var tipo=snap.tipo||'Ambiente';
-      allRowsHtml+='<tr><td colspan="3" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
+      allRowsHtml+='<tr><td colspan="4" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
         +'letter-spacing:2px;text-transform:uppercase;color:#8a6020;font-weight:900;'
-        +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()
-        +' &nbsp;·&nbsp; <span style="color:#b87020;font-weight:700;">'+mat.nm+(mat.fin?' · '+mat.fin:'')+'</span></td></tr>';
-      var acabamento=mat.fin||'';
+        +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()+'</td></tr>';
+      var ambM2=0;
       (snap.pecas||[]).forEach(function(p,i){
         if(!p.w||!p.h)return;
+        var a=(p.w/100)*(p.h/100)*(p.q||1);
+        ambM2+=a;
         var bg=i%2===0?'#fff':'#faf6ef';
         allRowsHtml+='<tr>'
           +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
           +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b>×'+p.q+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabamento+'</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;text-align:right;font-weight:700;color:#6b4400;">'+a.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11px;text-align:right;color:#999;">R$ '+fm(a*mat.pr)+'</td>'
           +'</tr>';
       });
       // Saihas/frontões do svState
@@ -2827,23 +2829,41 @@ function gerarPDF(){
         var svd=sv[it.k];
         var ml=svd.ml||0,alt=svd.altCm||0,qq=svd.q||1;
         if(!ml||!alt)return;
+        var sfm2=ml*(alt/100)*qq;
+        ambM2+=sfm2;
         allRowsHtml+='<tr>'
           +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#446;">'+it.l+'</td>'
           +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#777;">'+ml+'ml × '+alt+'cm'+(qq>1?' <b>×'+qq+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#bbb;">—</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;text-align:right;font-weight:700;color:#446;">'+sfm2.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11px;text-align:right;color:#999;">R$ '+fm(ml*qq*(CFG.sv[it.k]||0))+'</td>'
           +'</tr>';
       });});
+      if(ambM2>0){
+        allRowsHtml+='<tr style="background:#ede4ce;">'
+          +'<td colspan="2" style="padding:9px 14px;font-size:11px;font-weight:900;color:#5a3800;border-top:1px solid #d4c49a;">'+mat.nm+' — '+tipo+'</td>'
+          +'<td style="padding:9px 14px;text-align:right;font-size:11px;font-weight:900;color:#5a3800;border-top:1px solid #d4c49a;">'+ambM2.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;color:#5a3800;border-top:1px solid #d4c49a;">R$ '+fm(ambM2*mat.pr)+'</td>'
+          +'</tr>';
+      }
     });
   } else {
-    var acabFallback=mat.fin||'';
     (q.pds||[]).forEach(function(p,i){
       var bg=i%2===0?'#fff':'#faf6ef';
+      var m2p=p.m2||((p.w/100)*(p.h/100)*(p.q||1));
       allRowsHtml+='<tr>'
         +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
         +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' ×'+p.q:'')+'</td>'
-        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabFallback+'</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;text-align:right;font-weight:700;color:#6b4400;">'+m2p.toFixed(3)+' m²</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11px;text-align:right;color:#999;">R$ '+fm(m2p*mat.pr)+'</td>'
         +'</tr>';
     });
+  }
+  if(q.m2>0){
+    allRowsHtml+='<tr style="background:#0f0c00;">'
+      +'<td colspan="2" style="padding:10px 14px;font-size:10px;font-weight:900;color:#C9A84C;letter-spacing:1px;">TOTAL — '+mat.nm.toUpperCase()+'</td>'
+      +'<td style="padding:10px 14px;text-align:right;font-size:11px;font-weight:900;color:#C9A84C;">'+q.m2.toFixed(3)+' m²</td>'
+      +'<td style="padding:10px 14px;text-align:right;font-size:11px;font-weight:900;color:#C9A84C;">R$ '+fm(q.pedT||q.m2*mat.pr)+'</td>'
+      +'</tr>';
   }
 
   // Serviços
@@ -2933,12 +2953,16 @@ function gerarPDF(){
         +'<thead>'
           +'<tr style="background:#0f0c00;">'
             +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">PECA / DESCRICAO</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">MEDIDAS</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">ACABAMENTO</th>'
+            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">DIMENSOES</th>'
+            +'<th style="padding:10px 13px;text-align:right;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">AREA</th>'
           +'</tr>'
         +'</thead>'
         +'<tbody>'
           +allRowsHtml
+          +'<tr style="background:#ede4ce;">'
+            +'<td colspan="2" style="padding:11px 13px;font-size:12px;font-weight:900;color:#5a3800;border-top:2px solid #d4c49a;">Material: '+q.mat+'</td>'
+            +'<td style="padding:11px 13px;text-align:right;font-size:12px;font-weight:900;color:#5a3800;border-top:2px solid #d4c49a;">'+q.m2.toFixed(3)+' m&sup2;</td>'
+          +'</tr>'
         +'</tbody>'
       +'</table>'
     +'</div>'
@@ -2956,44 +2980,42 @@ function gerarPDF(){
     +'</div>':'')
 
     // VALORES
-    +sh('Valores e Condicoes de Pagamento')
-
-    // ── A VISTA ──
-    +'<div style="border:2px solid #C9A84C;border-radius:10px;overflow:hidden;box-shadow:0 3px 16px rgba(201,168,76,0.15);margin-bottom:10px;">'
-      +'<div style="background:#0f0c00;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;">'
-        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">&#9733; A VISTA &mdash; MELHOR OPCAO</span>'
-        +'<span style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.4);color:#C9A84C;font-size:8px;font-weight:900;padding:2px 10px;border-radius:20px;">Economia R$ '+fm(economia)+'</span>'
+    +sh('Valores do Projeto')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">'
+      // parcelado
+      +'<div style="border:1px solid #ddd5c5;border-radius:10px;overflow:hidden;">'
+        +'<div style="background:#f0ece3;padding:10px 16px;font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#999;font-weight:900;">PARCELADO</div>'
+        +'<div style="padding:14px 16px;background:#faf8f4;">'
+          +'<div style="font-size:22px;font-weight:900;color:#aaa;line-height:1;margin-bottom:4px;">R$ '+fm(q.parc)+'</div>'
+          +'<div style="font-size:11px;color:#bbb;">ate 8x de R$ '+fm(q.p8)+'</div>'
+        +'</div>'
       +'</div>'
-      +'<div style="padding:14px 18px;background:#fff;">'
-        +'<div style="font-size:9px;color:#a08040;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL À VISTA</div>'
-        +'<div style="font-size:34px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.vista)+'</div>'
-        +'<div style="font-size:11px;color:#a06020;">Valor final sem juros</div>'
-      +'</div>'
-    +'</div>'
-
-    // ── PARCELADO ──
-    +'<div style="border:1px solid #ddd5c5;border-radius:10px;overflow:hidden;margin-bottom:10px;">'
-      +'<div style="background:#f5f1e8;padding:8px 18px;">'
-        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-weight:900;">PARCELADO</span>'
-      +'</div>'
-      +'<div style="padding:12px 18px;background:#faf8f4;">'
-        +'<div style="font-size:9px;color:#aaa;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL PARCELADO</div>'
-        +'<div style="font-size:26px;font-weight:900;color:#aaa;line-height:1;margin-bottom:3px;">R$ '+fm(q.parc)+'</div>'
-        +'<div style="font-size:11px;color:#bbb;">Em até 8× de R$ '+fm(q.p8)+'</div>'
+      // a vista — destaque
+      +'<div style="border:2px solid #C9A84C;border-radius:10px;overflow:hidden;box-shadow:0 3px 16px rgba(201,168,76,0.2);">'
+        +'<div style="background:#0f0c00;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">'
+          +'<span style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">A VISTA</span>'
+          +'<span style="background:#C9A84C;color:#000;font-size:8px;font-weight:900;padding:2px 8px;border-radius:20px;">MELHOR OPCAO</span>'
+        +'</div>'
+        +'<div style="padding:14px 16px;background:#fff;">'
+          +'<div style="font-size:28px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:4px;">R$ '+fm(q.vista)+'</div>'
+          +'<div style="font-size:11px;color:#a06020;font-weight:700;margin-bottom:6px;">Valor final sem juros</div>'
+          +'<div style="display:inline-flex;align-items:center;gap:5px;background:#edf7ed;border:1px solid #7ac47a;color:#1e6b1e;font-size:9px;font-weight:900;padding:3px 10px;border-radius:20px;">&#9660; Economia de R$ '+fm(economia)+'</div>'
+        +'</div>'
       +'</div>'
     +'</div>'
 
-    // ── ENTRADA + ENTREGA ──
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">'
-      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
-        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">ENTRADA &mdash; 50%</div>'
-        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
-        +'<div style="font-size:10px;color:#999;">Na assinatura / medicao</div>'
+    // CONDIÇÃO DE PAGAMENTO
+    +sh('Condicao de Pagamento')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;">'
+      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:15px 18px;">'
+        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:5px;font-weight:900;">ENTRADA &mdash; 50%</div>'
+        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:4px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:11px;color:#999;">Na assinatura / medicao</div>'
       +'</div>'
-      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
-        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">NA ENTREGA &mdash; 50%</div>'
-        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
-        +'<div style="font-size:10px;color:#999;">Na entrega / instalacao</div>'
+      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:15px 18px;">'
+        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:5px;font-weight:900;">NA ENTREGA &mdash; 50%</div>'
+        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:4px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:11px;color:#999;">Na entrega / instalacao</div>'
       +'</div>'
     +'</div>'
 

@@ -1,46 +1,50 @@
-// hr-v13 — network-first, sem cache, auto-update
-var VERSAO = 'hr-v13';
+const CACHE = 'hr-v4';
+const FILES = [
+    '/HR_APP/',
+    '/HR_APP/index.html',
+    '/HR_APP/manifest.json',
+    '/HR_APP/icon-192.png',
+    '/HR_APP/icon-512.png',
+    './',
+    './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png'
+  ];
 
-self.addEventListener('install', function(e) {
-  // Ativa imediatamente, sem esperar abas fecharem
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', function(e) {
-  e.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(keys.map(function(k) {
-        return caches.delete(k);
-      }));
-    }).then(function() {
-      // Assume controle de todas as abas abertas imediatamente
-      return self.clients.claim();
-    }).then(function() {
-      // Avisa todas as abas que o SW novo assumiu
-      return self.clients.matchAll({ type: 'window' }).then(function(clients) {
-        clients.forEach(function(client) {
-          client.postMessage({ type: 'SW_ACTIVATED', version: VERSAO });
-        });
-      });
-    })
-  );
-});
-
-// Responde ao SKIP_WAITING enviado pelo app quando detecta novo SW esperando
-self.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'SKIP_WAITING') {
+self.addEventListener('install', function(e){
+    e.waitUntil(
+          caches.open(CACHE).then(function(cache){
+                  return cache.addAll(FILES).catch(function(err){
+                            console.log('Cache addAll error:', err);
+                  });
+          })
+        );
     self.skipWaiting();
-  }
 });
 
-self.addEventListener('fetch', function(e) {
-  // Sempre busca da rede. Se falhar, retorna mensagem de offline.
-  e.respondWith(
-    fetch(e.request, { cache: 'no-store' }).catch(function() {
-      return new Response('Offline – recarregue quando houver conexão.', {
-        status: 503,
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-      });
-    })
-  );
+self.addEventListener('activate', function(e){
+    e.waitUntil(
+          caches.keys().then(function(keys){
+                  return Promise.all(
+                            keys.filter(function(k){
+                                        return k !== CACHE;
+                            }).map(function(k){
+                                        console.log('Deleting old cache:', k);
+                                        return caches.delete(k);
+                            })
+                          );
+          })
+        );
+    self.clients.claim();
+});
+
+self.addEventListener('fetch', function(e){
+    e.respondWith(
+          caches.match(e.request).then(function(r){
+                  return r || fetch(e.request).catch(function(){
+                            return caches.match('/HR_APP/index.html');
+                  });
+          })
+        );
 });

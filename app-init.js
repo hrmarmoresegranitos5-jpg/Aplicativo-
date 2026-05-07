@@ -83,7 +83,7 @@ window.setLayout=function(){
       pages.style.cssText='position:absolute;top:'+hdrH+'px;left:0;right:0;bottom:0;overflow:hidden;';
     }
 
-    // Pages ativas e inativas — somente UMA pode estar visível
+    // Pages ativas e inativas
     document.querySelectorAll('.pg').forEach(function(pg){
       if(pg.classList.contains('on')){
         pg.style.cssText='display:block;position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;';
@@ -153,8 +153,6 @@ function openApp(pg){
   if(!a){console.error('openApp: #sApp não encontrado');return;}
   a.classList.add('on');
   a.style.display='block';
-  // Garantir tela limpa antes de qualquer renderização
-  fecharTodasTelas();
   setLayout();
   requestAnimationFrame(function(){
     setLayout();
@@ -181,10 +179,7 @@ function go(n){
     openAdminPin();
     return;
   }
-  // 1. Fecha TODOS os overlays/modais
   closeAll();
-  // 2. Fecha TODAS as telas antes de abrir qualquer uma
-  fecharTodasTelas();
   var _sApp=document.getElementById('sApp');
   var _sSplash=document.getElementById('sSplash');
   var _sIntro=document.getElementById('sIntro');
@@ -193,7 +188,10 @@ function go(n){
   if(_sIntro){_sIntro.style.display='none';}
   var actualId=n===7?'2b':n;
   document.querySelectorAll('.ni').forEach(function(t){t.classList.toggle('on',+t.dataset.pg===n);});
-  // 3. Abre SOMENTE a tela selecionada
+  document.querySelectorAll('.pg').forEach(function(p){
+    p.classList.remove('on');
+    p.style.cssText='display:none;';
+  });
   var pg=document.getElementById('pg'+actualId);
   if(pg){
     pg.classList.add('on');
@@ -285,19 +283,7 @@ function dispatch(e){
   el=e.target.closest('#cbY');if(el){if(cbYcb)cbYcb();return;}
   el=e.target.closest('#cbN');if(el){if(cbNcb)cbNcb();return;}
 }
-// ═══ FECHA TODAS AS TELAS (.pg) — garante que só UMA tela fique visível ═══
-function fecharTodasTelas(){
-  document.querySelectorAll('.pg').forEach(function(pg){
-    pg.classList.remove('on');
-    pg.style.cssText='display:none;';
-  });
-}
-function closeAll(){
-  // Fecha modais/overlays
-  document.querySelectorAll('.ov').forEach(function(o){o.classList.remove('on');});
-  // Fecha também qualquer tela avulsa que possa ter ficado visível
-  // (não fecha .pg pois o go() já faz isso; apenas garante overlays limpos)
-}
+function closeAll(){document.querySelectorAll('.ov').forEach(function(o){o.classList.remove('on');});}
 function showMd(id){
   closeAll();
   var _md=document.getElementById(id);

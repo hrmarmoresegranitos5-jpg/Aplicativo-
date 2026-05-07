@@ -33,17 +33,20 @@ function gerarPDF(){
   if(q.ambSnap&&q.ambSnap.length){
     q.ambSnap.forEach(function(snap,idx){
       var tipo=snap.tipo||'Ambiente';
-      allRowsHtml+='<tr><td colspan="2" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
+      allRowsHtml+='<tr><td colspan="4" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
         +'letter-spacing:2px;text-transform:uppercase;color:#8a6020;font-weight:900;'
         +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()+'</td></tr>';
-      var acabamento=mat.fin||'';
+      var ambM2=0;
       (snap.pecas||[]).forEach(function(p,i){
         if(!p.w||!p.h)return;
+        var a=(p.w/100)*(p.h/100)*(p.q||1);
+        ambM2+=a;
         var bg=i%2===0?'#fff':'#faf6ef';
         allRowsHtml+='<tr>'
           +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
           +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b>×'+p.q+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabamento+'</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;text-align:right;font-weight:700;color:#6b4400;">'+a.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11px;text-align:right;color:#999;">R$ '+fm(a*mat.pr)+'</td>'
           +'</tr>';
       });
       // Saihas/frontões do svState
@@ -54,23 +57,41 @@ function gerarPDF(){
         var svd=sv[it.k];
         var ml=svd.ml||0,alt=svd.altCm||0,qq=svd.q||1;
         if(!ml||!alt)return;
+        var sfm2=ml*(alt/100)*qq;
+        ambM2+=sfm2;
         allRowsHtml+='<tr>'
           +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#446;">'+it.l+'</td>'
           +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#777;">'+ml+'ml × '+alt+'cm'+(qq>1?' <b>×'+qq+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#555;">'+acabamento+'</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;text-align:right;font-weight:700;color:#446;">'+sfm2.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11px;text-align:right;color:#999;">R$ '+fm(ml*qq*(CFG.sv[it.k]||0))+'</td>'
           +'</tr>';
       });});
+      if(ambM2>0){
+        allRowsHtml+='<tr style="background:#ede4ce;">'
+          +'<td colspan="2" style="padding:9px 14px;font-size:11px;font-weight:900;color:#5a3800;border-top:1px solid #d4c49a;">'+mat.nm+' — '+tipo+'</td>'
+          +'<td style="padding:9px 14px;text-align:right;font-size:11px;font-weight:900;color:#5a3800;border-top:1px solid #d4c49a;">'+ambM2.toFixed(3)+' m²</td>'
+          +'<td style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;color:#5a3800;border-top:1px solid #d4c49a;">R$ '+fm(ambM2*mat.pr)+'</td>'
+          +'</tr>';
+      }
     });
   } else {
-    var acabFallback=mat.fin||'';
     (q.pds||[]).forEach(function(p,i){
       var bg=i%2===0?'#fff':'#faf6ef';
+      var m2p=p.m2||((p.w/100)*(p.h/100)*(p.q||1));
       allRowsHtml+='<tr>'
         +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
         +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' ×'+p.q:'')+'</td>'
-        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabFallback+'</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;text-align:right;font-weight:700;color:#6b4400;">'+m2p.toFixed(3)+' m²</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11px;text-align:right;color:#999;">R$ '+fm(m2p*mat.pr)+'</td>'
         +'</tr>';
     });
+  }
+  if(q.m2>0){
+    allRowsHtml+='<tr style="background:#0f0c00;">'
+      +'<td colspan="2" style="padding:10px 14px;font-size:10px;font-weight:900;color:#C9A84C;letter-spacing:1px;">TOTAL — '+mat.nm.toUpperCase()+'</td>'
+      +'<td style="padding:10px 14px;text-align:right;font-size:11px;font-weight:900;color:#C9A84C;">'+q.m2.toFixed(3)+' m²</td>'
+      +'<td style="padding:10px 14px;text-align:right;font-size:11px;font-weight:900;color:#C9A84C;">R$ '+fm(q.pedT||q.m2*mat.pr)+'</td>'
+      +'</tr>';
   }
 
   // Serviços
@@ -160,12 +181,16 @@ function gerarPDF(){
         +'<thead>'
           +'<tr style="background:#0f0c00;">'
             +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">PECA / DESCRICAO</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">MEDIDAS</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">ACABAMENTO</th>'
+            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">DIMENSOES</th>'
+            +'<th style="padding:10px 13px;text-align:right;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">AREA</th>'
           +'</tr>'
         +'</thead>'
         +'<tbody>'
           +allRowsHtml
+          +'<tr style="background:#ede4ce;">'
+            +'<td colspan="2" style="padding:11px 13px;font-size:12px;font-weight:900;color:#5a3800;border-top:2px solid #d4c49a;">Material: '+q.mat+'</td>'
+            +'<td style="padding:11px 13px;text-align:right;font-size:12px;font-weight:900;color:#5a3800;border-top:2px solid #d4c49a;">'+q.m2.toFixed(3)+' m&sup2;</td>'
+          +'</tr>'
         +'</tbody>'
       +'</table>'
     +'</div>'

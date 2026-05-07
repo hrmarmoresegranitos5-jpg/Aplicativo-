@@ -3,7 +3,7 @@
     "short_name": "HR Mármores",
     "description": "Sistema de gestão HR Mármores e Granitos",
     "start_url": "/HR_APP/index.html",
-    "scope": "/HR_APP/",
+    "scope": "/",
     "display": "standalone",
     "orientation": "portrait",
     "background_color": "#070709",

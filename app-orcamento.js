@@ -944,222 +944,236 @@ function gerarPDF(){
 
   // ── Linhas da tabela ──
   // Montar linhas da tabela por ambiente
-  var allRowsHtml='';
+  // ── Lista de peças simplificada (apenas nome + medidas, sem m² ou preço unitário) ──
+  var pecasListHtml='';
   if(q.ambSnap&&q.ambSnap.length){
     q.ambSnap.forEach(function(snap,idx){
       var tipo=snap.tipo||'Ambiente';
-      allRowsHtml+='<tr><td colspan="3" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
-        +'letter-spacing:2px;text-transform:uppercase;color:#8a6020;font-weight:900;'
-        +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()
-        +' &nbsp;·&nbsp; <span style="color:#b87020;font-weight:700;">'+mat.nm+(mat.fin?' · '+mat.fin:'')+'</span></td></tr>';
-      var acabamento=mat.fin||'';
-      (snap.pecas||[]).forEach(function(p,i){
-        if(!p.w||!p.h)return;
-        var bg=i%2===0?'#fff':'#faf6ef';
-        allRowsHtml+='<tr>'
-          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
-          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b>×'+p.q+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabamento+'</td>'
-          +'</tr>';
-      });
-      // Saihas/frontões do svState
+      var hasPecas=(snap.pecas||[]).filter(function(p){return p.w&&p.h;}).length>0;
       var g=SV_DEFS[tipo]||SV_DEFS.Cozinha;
       var sv=snap.svState||{};
+      var hasSf=false;
+      g.forEach(function(grp){grp.its.forEach(function(it){if(sv[it.k]&&it.u==='sf'){var d=sv[it.k];if(d.ml&&d.altCm)hasSf=true;}});});
+      if(!hasPecas&&!hasSf)return;
+      if(q.ambSnap.length>1){
+        pecasListHtml+='<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:#C9A84C;font-weight:700;padding:12px 0 8px;margin-top:4px;border-top:1px solid #EDE5CC;">'+(idx+1)+'&ordm; Ambiente &mdash; '+tipo+'</div>';
+      }
+      (snap.pecas||[]).forEach(function(p){
+        if(!p.w||!p.h)return;
+        var dimStr=p.w+' × '+p.h+' cm'+(p.q>1?' (×'+p.q+')':'');
+        pecasListHtml+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #EDE5CC;">'
+          +'<span style="font-size:14px;font-weight:600;color:#1a1a1a;letter-spacing:0.1px;">'+(p.desc||'Peça')+'</span>'
+          +'<span style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:12px;color:#999;font-weight:400;letter-spacing:0.3px;">'+dimStr+'</span>'
+          +'</div>';
+      });
       g.forEach(function(grp){grp.its.forEach(function(it){
         if(!sv[it.k]||it.u!=='sf')return;
-        var svd=sv[it.k];
-        var ml=svd.ml||0,alt=svd.altCm||0,qq=svd.q||1;
+        var svd=sv[it.k];var ml=svd.ml||0,alt=svd.altCm||0,qq=svd.q||1;
         if(!ml||!alt)return;
-        allRowsHtml+='<tr>'
-          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#446;">'+it.l+'</td>'
-          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#777;">'+ml+'ml × '+alt+'cm'+(qq>1?' <b>×'+qq+'</b>':'')+'</td>'
-          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#bbb;">—</td>'
-          +'</tr>';
+        pecasListHtml+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #EDE5CC;">'
+          +'<span style="font-size:14px;font-weight:600;color:#1a1a1a;letter-spacing:0.1px;">'+it.l+'</span>'
+          +'<span style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:12px;color:#999;font-weight:400;letter-spacing:0.3px;">'+ml+' ml × '+alt+' cm'+(qq>1?' (×'+qq+')':'')+'</span>'
+          +'</div>';
       });});
     });
   } else {
-    var acabFallback=mat.fin||'';
-    (q.pds||[]).forEach(function(p,i){
-      var bg=i%2===0?'#fff':'#faf6ef';
-      allRowsHtml+='<tr>'
-        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
-        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' ×'+p.q:'')+'</td>'
-        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabFallback+'</td>'
-        +'</tr>';
+    (q.pds||[]).forEach(function(p){
+      if(!p.w||!p.h)return;
+      var dimStr=p.w+' × '+p.h+' cm'+(p.q>1?' (×'+p.q+')':'');
+      pecasListHtml+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #EDE5CC;">'
+        +'<span style="font-size:14px;font-weight:600;color:#1a1a1a;letter-spacing:0.1px;">'+(p.desc||'Peça')+'</span>'
+        +'<span style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:12px;color:#999;font-weight:400;letter-spacing:0.3px;">'+dimStr+'</span>'
+        +'</div>';
     });
   }
 
-  // Serviços
-  var svcsHtml=(q.acN&&q.acN.length?q.acN:[]).concat(['Fabricação e acabamento completo']).map(function(a){
-    return '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
-      +'<span style="color:#C9A84C;font-weight:900;font-size:11px;flex-shrink:0;">✓</span>'
-      +'<span style="font-size:11.5px;color:#333;line-height:1.4;">'+a+'</span>'
+  // ── Serviços inclusos ──
+  var inclusosBase=['Corte e fabricação','Acabamento completo'];
+  var inclusosExtra=(q.acN&&q.acN.length)?q.acN:[];
+  var todosInclusos=inclusosBase.concat(inclusosExtra);
+  var inclusosHtml=todosInclusos.map(function(a){
+    return '<div style="display:inline-flex;align-items:center;gap:6px;margin:0 10px 6px 0;">'
+      +'<span style="color:#C9A84C;font-size:10px;flex-shrink:0;">&#9670;</span>'
+      +'<span style="font-size:12px;color:#444;font-weight:500;">'+a+'</span>'
       +'</div>';
   }).join('');
-
-
-  var svcs=(q.acN&&q.acN.length)?q.acN.map(function(a){
-    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
-      +'<span style="color:#C9A84C;font-weight:900;font-size:11px;margin-top:1px;flex-shrink:0;">&#10003;</span>'
-      +'<span style="font-size:12px;color:#333;line-height:1.4;">'+a+'</span>'
-      +'</div>';
-  }).join(''):'';
 
   var clienteInfo='';
   if(q.tel)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#128241;</span>'+q.tel+'</div>';
   if(q.cidade)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#128205;</span>'+q.cidade+'</div>';
   if(q.end)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#127968;</span>'+q.end+'</div>';
-  var obsBox=q.obs?'<div style="background:#fffbf0;border-left:4px solid #C9A84C;padding:10px 14px;margin-bottom:18px;font-size:11.5px;color:#555;border-radius:0 8px 8px 0;line-height:1.65;"><strong style="color:#7a4e00;">Observacoes:</strong> '+q.obs+'</div>':'';
+  var obsBox=q.obs?'<div style="background:#fffbf0;border-left:3px solid #C9A84C;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#555;border-radius:0 8px 8px 0;line-height:1.65;"><strong style="color:#7a4e00;">Observações:</strong> '+q.obs+'</div>':'';
 
-  // sec header helper
-  function sh(t){return '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;"><span style="font-size:7.5px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:900;">'+t+'</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.4),transparent);"></div></div>';}
+  // sec header helper — linha discreta
+  function sh(t){return '<div style="display:flex;align-items:center;gap:10px;margin:0 0 14px;margin-top:4px;"><span style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:900;white-space:nowrap;">'+t+'</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.35),transparent);"></div></div>';}
+
+  // ── Faixa lateral dourada SVG (decoração vertical) ──
+  var goldBar='<div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#5a3a06 0%,#C9A84C 30%,#E8C96A 50%,#C9A84C 70%,#5a3a06 100%);"></div>';
 
   var recHtml=''
-  // ── WRAPPER
-  +'<div id="pdfReceipt" style="width:700px;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#1a1a1a;">'
+  +'<div id="pdfReceipt" style="width:700px;font-family:Georgia,\'Times New Roman\',serif;background:#FAFAF8;color:#1a1a1a;position:relative;">'
 
-  // ── TOP STRIPE
-  +'<div style="height:6px;background:linear-gradient(90deg,#5a3a06 0%,#C9A84C 35%,#E8C96A 50%,#C9A84C 65%,#5a3a06 100%);"></div>'
+  // ══ TOPO DOURADO ══
+  +'<div style="height:3px;background:linear-gradient(90deg,#3a2200 0%,#C9A84C 30%,#EDD06A 50%,#C9A84C 70%,#3a2200 100%);"></div>'
 
-  // ── HEADER
-  +'<div style="background:#0f0c00;padding:28px 38px 22px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">'
-    // brand left
-    +'<div style="display:flex;flex-direction:column;gap:6px;">'
-      +'<div style="font-size:26px;font-weight:900;color:#C9A84C;letter-spacing:-0.5px;line-height:1;">'+emp.nome+'</div>'
-      +'<div style="font-size:8.5px;letter-spacing:3.5px;text-transform:uppercase;color:rgba(201,168,76,0.45);">Marmore &middot; Granito &middot; Quartzito</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,0.22);font-style:italic;margin-top:2px;">Qualidade, Precisao e Acabamento Profissional</div>'
+  // ══ CABEÇALHO ══
+  +'<div style="background:#0C0900;padding:32px 44px 28px;display:flex;justify-content:space-between;align-items:flex-end;">'
+
+    // Marca
+    +'<div>'
+      +'<div style="font-size:28px;font-weight:700;color:#C9A84C;letter-spacing:0.5px;line-height:1;margin-bottom:6px;">'+emp.nome+'</div>'
+      +'<div style="font-size:7.5px;letter-spacing:4px;text-transform:uppercase;color:rgba(201,168,76,0.38);font-family:\'Helvetica Neue\',Arial,sans-serif;">M&Aacute;RMORE &nbsp;&bull;&nbsp; GRANITO &nbsp;&bull;&nbsp; QUARTZITO</div>'
     +'</div>'
-    // info right
-    +'<div style="text-align:right;display:flex;flex-direction:column;gap:3px;">'
-      +'<div style="font-size:10.5px;color:rgba(201,168,76,0.9);font-weight:700;">'+emp.end+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+emp.cidade+'</div>'
-      +'<div style="font-size:11px;color:rgba(201,168,76,0.9);font-weight:700;margin-top:3px;">'+emp.tel+'</div>'
-      +'<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+emp.ig+'</div>'
-      +'<div style="font-size:8.5px;color:rgba(255,255,255,0.18);margin-top:3px;">CNPJ: '+emp.cnpj+'</div>'
+
+    // Contato
+    +'<div style="text-align:right;font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+      +'<div style="font-size:13px;color:#C9A84C;font-weight:600;letter-spacing:0.3px;margin-bottom:3px;">'+emp.tel+'</div>'
+      +'<div style="font-size:9.5px;color:rgba(255,255,255,0.3);line-height:1.7;">'+emp.end+'</div>'
+      +'<div style="font-size:9.5px;color:rgba(255,255,255,0.22);">'+emp.cidade+'</div>'
+    +'</div>'
+
+  +'</div>'
+
+  // ══ FAIXA DO DOCUMENTO ══
+  +'<div style="background:#1A1400;padding:10px 44px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(201,168,76,0.15);border-bottom:1px solid rgba(201,168,76,0.15);">'
+    +'<div style="display:flex;align-items:center;gap:16px;font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+      +'<div style="font-size:7px;letter-spacing:3.5px;text-transform:uppercase;color:rgba(201,168,76,0.5);font-weight:600;">Proposta Comercial</div>'
+      +'<div style="width:1px;height:12px;background:rgba(201,168,76,0.2);"></div>'
+      +'<div style="font-size:9px;font-weight:700;color:#C9A84C;letter-spacing:1px;">'+orcNum+'</div>'
+    +'</div>'
+    +'<div style="text-align:right;font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+      +'<span style="font-size:9px;color:rgba(255,255,255,0.3);">Emiss&atilde;o: </span>'
+      +'<span style="font-size:9px;color:rgba(201,168,76,0.65);font-weight:600;">'+fd(q.date)+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,0.15);margin:0 6px;">&nbsp;&middot;&nbsp;</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,0.3);">V&aacute;lida: </span>'
+      +'<span style="font-size:9px;color:rgba(201,168,76,0.65);font-weight:600;">7 dias</span>'
     +'</div>'
   +'</div>'
 
-  // ── BADGE BAR
-  +'<div style="background:#f7f2e8;border-bottom:3px solid #C9A84C;padding:11px 38px;display:flex;justify-content:space-between;align-items:center;">'
-    +'<div style="display:flex;align-items:center;gap:12px;">'
-      +'<div style="background:#0f0c00;color:#C9A84C;font-size:8px;font-weight:900;padding:6px 16px;border-radius:30px;letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(201,168,76,0.5);">+ ORCAMENTO +</div>'
-      +'<div style="background:#C9A84C;color:#000;font-size:9px;font-weight:900;padding:4px 10px;border-radius:5px;letter-spacing:1px;">'+orcNum+'</div>'
-    +'</div>'
-    +'<div style="text-align:right;">'
-      +'<div style="font-size:10px;color:#888;"><strong style="color:#5a3800;">EMISSAO:</strong> '+fd(q.date)+'</div>'
-      +'<div style="font-size:9.5px;color:#aaa;">Validade: 7 dias</div>'
-    +'</div>'
-  +'</div>'
+  // ══ CORPO ══
+  +'<div style="padding:36px 44px 32px;background:#FAFAF8;">'
 
-  // ── BODY
-  +'<div style="padding:24px 38px 20px;">'
-
-    // CLIENTE
-    +sh('Cliente')
-    +'<div style="display:flex;gap:12px;margin-bottom:20px;align-items:stretch;">'
-      +'<div style="flex:1;background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:15px 18px;">'
-        +'<div style="font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:#c0a860;margin-bottom:5px;font-weight:900;">NOME DO CLIENTE</div>'
-        +'<div style="font-size:21px;font-weight:900;color:#1a1a1a;line-height:1;margin-bottom:8px;">'+q.cli+'</div>'
-        +(clienteInfo?'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;">'+clienteInfo+'</div>':'')
+    // ── Destinatário ──
+    +'<div style="margin-bottom:28px;">'
+      +'<div style="font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:600;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:8px;">Preparado para</div>'
+      +'<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">'
+        +'<div style="font-size:26px;font-weight:700;color:#0C0900;line-height:1;letter-spacing:-0.3px;">'+q.cli+'</div>'
+        +'<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.4);padding:3px 10px;border-radius:3px;">'+q.tipo+'</div>'
       +'</div>'
-      +'<div style="background:#0f0c00;border:1px solid rgba(201,168,76,0.45);border-radius:10px;padding:14px 18px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-width:110px;">'
-        +'<div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.5);margin-bottom:6px;font-weight:900;">PROJETO</div>'
-        +'<div style="font-size:16px;font-weight:900;color:#C9A84C;line-height:1.2;">'+q.tipo+'</div>'
-      +'</div>'
+      +(clienteInfo?'<div style="display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:8px;font-family:\'Helvetica Neue\',Arial,sans-serif;">'+clienteInfo+'</div>':'')
     +'</div>'
+
     +obsBox
 
-    // MATERIAL E MEDIDAS
-    +sh('Material e Medidas')
-    +'<div style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:20px;">'
-      +'<table style="width:100%;border-collapse:collapse;">'
-        +'<thead>'
-          +'<tr style="background:#0f0c00;">'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">PECA / DESCRICAO</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">MEDIDAS</th>'
-            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">ACABAMENTO</th>'
-          +'</tr>'
-        +'</thead>'
-        +'<tbody>'
-          +allRowsHtml
-        +'</tbody>'
-      +'</table>'
+    // ── Divisor ouro ──
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">'
+      +'<div style="height:1px;flex:1;background:linear-gradient(90deg,#C9A84C,rgba(201,168,76,0.08));"></div>'
+      +'<div style="width:4px;height:4px;background:#C9A84C;transform:rotate(45deg);flex-shrink:0;"></div>'
     +'</div>'
 
-    // INCLUSO
-    +(svcs?sh('Incluso no Projeto')
-    +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:14px 18px;margin-bottom:20px;">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">'
-        +svcs
-        +'<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
-          +'<span style="color:#C9A84C;font-weight:900;font-size:11px;margin-top:1px;flex-shrink:0;">&#10003;</span>'
-          +'<span style="font-size:12px;color:#333;line-height:1.4;">Fabricacao e acabamento completo</span>'
+    // ── ITENS ──
+    +'<div style="margin-bottom:28px;">'
+      +'<div style="font-size:7.5px;letter-spacing:3px;text-transform:uppercase;color:#888;font-weight:600;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:14px;">Peças / Especificações</div>'
+      +pecasListHtml
+    +'</div>'
+
+    // ── ESPECIFICAÇÃO DO MATERIAL ──
+    +'<div style="background:#fff;border:1px solid #E8E0CC;border-radius:8px;padding:20px 24px;margin-bottom:28px;">'
+
+      // Grid material + acabamento
+      +'<div style="display:flex;gap:0;margin-bottom:'+(mat.fin?'18':'0')+'px;">'
+        +'<div style="flex:1;padding-right:20px;border-right:1px solid #EDE5CC;">'
+          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:6px;">Material</div>'
+          +'<div style="font-size:15px;font-weight:700;color:#1a1a1a;">'+q.mat+'</div>'
         +'</div>'
+        +(mat.fin?'<div style="flex:1;padding-left:20px;">'
+          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:6px;">Acabamento</div>'
+          +'<div style="font-size:15px;font-weight:700;color:#1a1a1a;">'+mat.fin+'</div>'
+        +'</div>':'<div style="flex:1;padding-left:20px;"></div>')
       +'</div>'
-    +'</div>':'')
 
-    // VALORES & CONDIÇÕES
-    +sh('Valores e Condicoes de Pagamento')
+      // Divisor
+      +(mat.fin?'<div style="height:1px;background:#EDE5CC;margin-bottom:16px;"></div>':'')
 
-    // ── CARD À VISTA ──
-    +'<div style="border:2px solid #C9A84C;border-radius:10px;overflow:hidden;box-shadow:0 3px 16px rgba(201,168,76,0.15);margin-bottom:10px;">'
-      +'<div style="background:#0f0c00;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;">'
-        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">&#9733; A VISTA &mdash; MELHOR OPCAO</span>'
-        +'<span style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.4);color:#C9A84C;font-size:8px;font-weight:900;padding:2px 10px;border-radius:20px;">Economia R$ '+fm(economia)+'</span>'
+      // Inclusos
+      +'<div>'
+        +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:10px;">Incluso nesta proposta</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px 0;font-family:\'Helvetica Neue\',Arial,sans-serif;">'+inclusosHtml+'</div>'
       +'</div>'
-      +'<div style="padding:14px 18px;background:#fff;">'
-        +'<div style="font-size:9px;color:#a08040;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL À VISTA</div>'
-        +'<div style="font-size:34px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.vista)+'</div>'
-        +'<div style="font-size:11px;color:#a06020;">Valor final sem juros</div>'
+
+    +'</div>'
+
+    // ── VALOR FINAL ──
+    +'<div style="background:#0C0900;border-radius:10px;padding:26px 28px;margin-bottom:16px;position:relative;overflow:hidden;">'
+
+      // Detalhe decorativo
+      +'<div style="position:absolute;right:-30px;top:-30px;width:120px;height:120px;border-radius:50%;border:1px solid rgba(201,168,76,0.08);"></div>'
+      +'<div style="position:absolute;right:-10px;top:-10px;width:80px;height:80px;border-radius:50%;border:1px solid rgba(201,168,76,0.06);"></div>'
+
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">'
+
+        // À vista
+        +'<div>'
+          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.55);font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:8px;">&Agrave; Vista &mdash; Sem Juros</div>'
+          +'<div style="font-size:42px;font-weight:700;color:#C9A84C;line-height:1;letter-spacing:-1px;">R$ '+fm(q.vista)+'</div>'
+          +'<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:10.5px;color:rgba(255,255,255,0.3);margin-top:6px;">Economia de <span style="color:rgba(201,168,76,0.6);font-weight:600;">R$ '+fm(economia)+'</span> em rela&ccedil;&atilde;o ao parcelado</div>'
+        +'</div>'
+
+        // Badge e parcelado
+        +'<div style="text-align:right;">'
+          +'<div style="background:#C9A84C;color:#0C0900;font-family:\'Helvetica Neue\',Arial,sans-serif;font-size:8px;font-weight:900;padding:5px 14px;border-radius:4px;letter-spacing:2px;text-transform:uppercase;display:inline-block;margin-bottom:12px;">Melhor Opção</div>'
+          +'<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+            +'<div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.2);font-weight:600;margin-bottom:3px;">Ou parcelado</div>'
+            +'<div style="font-size:15px;font-weight:700;color:rgba(255,255,255,0.25);">R$ '+fm(q.parc)+'</div>'
+            +'<div style="font-size:9.5px;color:rgba(255,255,255,0.15);">at&eacute; 8× de R$ '+fm(q.p8)+'</div>'
+          +'</div>'
+        +'</div>'
+
       +'</div>'
     +'</div>'
 
-    // ── PARCELADO ──
-    +'<div style="border:1px solid #ddd5c5;border-radius:10px;overflow:hidden;margin-bottom:10px;">'
-      +'<div style="background:#f5f1e8;padding:8px 18px;">'
-        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-weight:900;">PARCELADO</span>'
-      +'</div>'
-      +'<div style="padding:12px 18px;background:#faf8f4;">'
-        +'<div style="font-size:9px;color:#aaa;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL PARCELADO</div>'
-        +'<div style="font-size:26px;font-weight:900;color:#aaa;line-height:1;margin-bottom:3px;">R$ '+fm(q.parc)+'</div>'
-        +'<div style="font-size:11px;color:#bbb;">Em até 8× de R$ '+fm(q.p8)+'</div>'
-      +'</div>'
-    +'</div>'
+    // ── CONDIÇÃO DE PAGAMENTO ──
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
 
-    // ── ENTRADA + ENTREGA ──
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">'
-      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
-        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">ENTRADA &mdash; 50%</div>'
-        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
-        +'<div style="font-size:10px;color:#999;">Na assinatura / medicao</div>'
+      +'<div style="background:#fff;border:1px solid #E8E0CC;border-radius:8px;padding:16px 20px;">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;">Entrada</div>'
+          +'<div style="font-size:8.5px;color:#bbb;font-family:\'Helvetica Neue\',Arial,sans-serif;">50%</div>'
+        +'</div>'
+        +'<div style="font-size:22px;font-weight:700;color:#1a1a1a;line-height:1;margin-bottom:4px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:10.5px;color:#aaa;font-family:\'Helvetica Neue\',Arial,sans-serif;">Na assinatura &mdash; ap&oacute;s medi&ccedil;&atilde;o</div>'
       +'</div>'
-      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
-        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">NA ENTREGA &mdash; 50%</div>'
-        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
-        +'<div style="font-size:10px;color:#999;">Na entrega / instalacao</div>'
+
+      +'<div style="background:#fff;border:1px solid #E8E0CC;border-radius:8px;padding:16px 20px;">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;">Na Entrega</div>'
+          +'<div style="font-size:8.5px;color:#bbb;font-family:\'Helvetica Neue\',Arial,sans-serif;">50%</div>'
+        +'</div>'
+        +'<div style="font-size:22px;font-weight:700;color:#1a1a1a;line-height:1;margin-bottom:4px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:10.5px;color:#aaa;font-family:\'Helvetica Neue\',Arial,sans-serif;">Na entrega e instala&ccedil;&atilde;o</div>'
       +'</div>'
+
     +'</div>'
 
   +'</div>'
 
-  // ── FOOTER
-  +'<div style="background:#0f0c00;padding:18px 38px;display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:4px;">'
+  // ══ RODAPÉ ══
+  +'<div style="background:#0C0900;padding:18px 44px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(201,168,76,0.12);">'
     +'<div>'
-      +'<div style="font-size:14px;font-weight:900;color:#C9A84C;line-height:1;margin-bottom:4px;">'+emp.nome+'</div>'
-      +'<div style="font-size:9.5px;color:rgba(201,168,76,0.4);">'+emp.end+' &mdash; '+emp.cidade+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#C9A84C;letter-spacing:0.3px;margin-bottom:3px;">'+emp.nome+'</div>'
+      +'<div style="font-size:8.5px;color:rgba(201,168,76,0.25);font-family:\'Helvetica Neue\',Arial,sans-serif;">'+emp.end+' &mdash; '+emp.cidade+'</div>'
     +'</div>'
-    +'<div style="text-align:right;line-height:1.9;">'
-      +'<div style="font-size:10.5px;color:rgba(201,168,76,0.85);font-weight:700;">'+emp.tel+'</div>'
-      +'<div style="font-size:9.5px;color:rgba(201,168,76,0.4);">'+emp.ig+'</div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,0.15);">CNPJ: '+emp.cnpj+'</div>'
+    +'<div style="text-align:right;font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+      +'<div style="font-size:10px;color:rgba(201,168,76,0.7);font-weight:600;letter-spacing:0.3px;">'+emp.tel+'</div>'
+      +(emp.ig?'<div style="font-size:8.5px;color:rgba(201,168,76,0.25);margin-top:2px;">'+emp.ig+'</div>':'')
+      +'<div style="font-size:7.5px;color:rgba(255,255,255,0.1);margin-top:3px;">CNPJ: '+emp.cnpj+'</div>'
     +'</div>'
   +'</div>'
-  +'<div style="height:5px;background:linear-gradient(90deg,#5a3a06 0%,#C9A84C 35%,#E8C96A 50%,#C9A84C 65%,#5a3a06 100%);"></div>'
+
+  // ══ BASE DOURADA ══
+  +'<div style="height:3px;background:linear-gradient(90deg,#3a2200 0%,#C9A84C 30%,#EDD06A 50%,#C9A84C 70%,#3a2200 100%);"></div>'
+
   +'</div>';
-
-
-  // ── Overlay ──
-
 
   // ── Overlay ──
   var ov=document.createElement('div');
