@@ -6,23 +6,23 @@ var CACHE_VERSION = 'hr-app-v14';
 
 // Arquivos do app shell — cacheados para funcionar offline
 var APP_SHELL = [
-  '/HR_APP/index.html',
-  '/HR_APP/styles.css',
-  '/HR_APP/manifest.json',
-  '/HR_APP/icon-192.png',
-  '/HR_APP/icon-512.png',
-  '/HR_APP/data-cuba-imgs.js',
-  '/HR_APP/data-defaults.js',
-  '/HR_APP/app-init.js',
-  '/HR_APP/app-orcamento.js',
-  '/HR_APP/app-financas.js',
-  '/HR_APP/app-catalogos.js',
-  '/HR_APP/app-config.js',
-  '/HR_APP/app-contrato.js',
-  '/HR_APP/fechamento.js',
-  '/HR_APP/app-boletos.js',
-  '/HR_APP/app-ai-utils.js',
-  '/HR_APP/pwa.js'
+  '/Aplicativo-/index.html',
+  '/Aplicativo-/styles.css',
+  '/Aplicativo-/manifest.json',
+  '/Aplicativo-/icon-192.png',
+  '/Aplicativo-/icon-512.png',
+  '/Aplicativo-/data-cuba-imgs.js',
+  '/Aplicativo-/data-defaults.js',
+  '/Aplicativo-/app-init.js',
+  '/Aplicativo-/app-orcamento.js',
+  '/Aplicativo-/app-financas.js',
+  '/Aplicativo-/app-catalogos.js',
+  '/Aplicativo-/app-config.js',
+  '/Aplicativo-/app-contrato.js',
+  '/Aplicativo-/fechamento.js',
+  '/Aplicativo-/app-boletos.js',
+  '/Aplicativo-/app-ai-utils.js',
+  '/Aplicativo-/pwa.js'
 ];
 
 // ── INSTALL: pré-cacheia o app shell ──
