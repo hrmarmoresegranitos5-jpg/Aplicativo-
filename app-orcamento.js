@@ -356,14 +356,42 @@ function pickMatAmb(ambId,stoneId){
   var amb=ambientes.find(function(a){return a.id==ambId;});
   if(!amb)return;
   amb.selMat=stoneId;
-  renderAmbientes();
+  var panel=document.getElementById('matpick-'+ambId);
+  if(panel)panel.innerHTML=buildMatCatalogHtml(amb);
+  var bar=document.getElementById('matbar-'+ambId);
+  if(bar)bar.innerHTML=buildMatBarHtml(amb);
 }
 
-function buildMatAmbHtml(amb){
+function buildMatBarHtml(amb){
+  var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;});
+  if(!ambMat){
+    return '<div style="background:rgba(255,60,60,.08);border:1px solid rgba(255,80,80,.2);border-radius:9px;padding:10px 14px;font-size:.73rem;color:#ff6b6b;cursor:pointer;" onclick="toggleMatPick('+amb.id+')"><span style="margin-right:6px;">⚠️</span>Nenhuma pedra selecionada — toque para escolher</div>';
+  }
+  var tx=ambMat.photo?'':ambMat.tx;
+  return '<div style="display:flex;align-items:center;gap:10px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-radius:10px;padding:10px 13px;cursor:pointer;" onclick="toggleMatPick('+amb.id+')">'
+    +'<div class="msw '+tx+'" style="width:42px;height:42px;min-width:42px;border-radius:8px;flex-shrink:0;">'
+    +(ambMat.photo?'<img src="'+ambMat.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">':'' )
+    +'<div class="mshine"></div></div>'
+    +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:.76rem;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ambMat.nm+'</div>'
+      +'<div style="font-size:.63rem;color:var(--gold2);margin-top:1px;">'+ambMat.fin+' · R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</div>'
+    +'</div>'
+    +'<div style="font-size:.65rem;color:var(--t3);white-space:nowrap;">Trocar ▾</div>'
+  +'</div>';
+}
+
+function toggleMatPick(ambId){
+  var panel=document.getElementById('matpick-'+ambId);
+  if(!panel)return;
+  var isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'block';
+}
+
+function buildMatCatalogHtml(amb){
   var GRUPOS=[
-    {cat:'Granito Cinza',icon:'🩶'},
-    {cat:'Granito Preto',icon:'🖤'},
-    {cat:'Granito Branco',icon:'🤍'},
+    {cat:'Granito Cinza',icon:'⚪'},
+    {cat:'Granito Preto',icon:'●'},
+    {cat:'Granito Branco',icon:'○'},
     {cat:'Granito Verde',icon:'💚'},
     {cat:'Mármore',icon:'🌿'},
     {cat:'Travertino',icon:'🟤'},
@@ -371,25 +399,41 @@ function buildMatAmbHtml(amb){
     {cat:'Ultra Compacto',icon:'⚡'}
   ];
   var h='';
+  var hasAny=false;
   GRUPOS.forEach(function(grp){
-    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat;});
+    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat&&s.pr>0;});
     if(!ss.length)return;
-    h+='<div class="mcat" style="font-size:.55rem;margin:6px 0 4px;">'+grp.icon+' '+grp.cat+'</div>';
-    h+='<div class="mscroll">';
+    hasAny=true;
+    h+='<div style="font-size:.55rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:12px 0 8px;">'+grp.icon+' '+grp.cat+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:4px;">';
     ss.forEach(function(s){
-      var on=s.id===amb.selMat?'on':'';
-      h+='<div class="mc '+on+'" style="min-width:100px;" onclick="pickMatAmb('+amb.id+',\''+s.id+'\')">';
-      h+='<div class="msw '+(s.photo?'':s.tx)+'" style="height:48px;">';
-      if(s.photo)h+='<img src="'+s.photo+'" alt="">';
-      h+='<div class="mshine"></div>';
+      var sel=s.id===amb.selMat;
+      h+='<div onclick="pickMatAmb('+amb.id+',\''+(s.id)+'\')" style="cursor:pointer;border-radius:12px;border:2px solid '+(sel?'var(--gold)':'var(--bd2)')+';background:'+(sel?'rgba(201,168,76,.10)':'var(--s3)')+';overflow:hidden;transition:all .15s;position:relative;">';
+      h+='<div style="width:100%;height:80px;background:var(--s4);overflow:hidden;position:relative;">';
+      if(s.photo){
+        h+='<img src="'+s.photo+'" alt="'+s.nm+'" style="width:100%;height:100%;object-fit:cover;display:block;">';
+      } else {
+        h+='<div class="msw '+s.tx+'" style="width:100%;height:100%;"><div class="mshine"></div></div>';
+      }
+      if(sel){
+        h+='<div style="position:absolute;top:5px;right:5px;background:var(--gold);color:#1a0800;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;">✓</div>';
+      }
       h+='</div>';
-      h+='<div class="mbody">';
-      h+='<div class="mnm" style="font-size:.62rem;">'+s.nm+'</div>';
-      h+='<div class="mfin" style="font-size:.55rem;">R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
-      h+='</div></div>';
+      h+='<div style="padding:8px 9px;">';
+      h+='<div style="font-size:.72rem;font-weight:700;color:var(--tx);line-height:1.3;margin-bottom:2px;">'+s.nm+'</div>';
+      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">'+s.fin+'</div>';
+      h+='<div style="background:var(--gdim);border:1px solid var(--gold3);border-radius:7px;padding:6px 8px;display:flex;justify-content:space-between;align-items:baseline;">';
+      h+='<span style="font-size:.55rem;color:var(--gold3);letter-spacing:1px;text-transform:uppercase;">Preço/m²</span>';
+      h+='<span style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--gold2);">R$ '+s.pr.toLocaleString("pt-BR")+'</span>';
+      h+='</div>';
+      h+='</div>';
+      h+='</div>';
     });
     h+='</div>';
   });
+  if(!hasAny){
+    h='<div style="text-align:center;padding:30px 16px;color:var(--t3);"><div style="font-size:2rem;margin-bottom:8px;">🪸</div><div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Nenhuma pedra cadastrada</div><div style="font-size:.72rem;">Vá em Config → Pedras para adicionar</div></div>';
+  }
   return h;
 }
 
@@ -458,39 +502,20 @@ function renderAmbientes(){
   var h='';
   ambientes.forEach(function(amb,idx){
     var num=idx+1;
+    var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;});
     h+='<div class="ambiente">';
-    // Header
     h+='<div class="amb-header">';
     h+='<span class="amb-title">'+num+'º Ambiente — '+amb.tipo+'</span>';
     h+='<button class="amb-rm" data-rm-amb="'+amb.id+'">✕ Remover</button>';
     h+='</div>';
     h+='<div class="amb-body">';
-    // Stone selector per ambiente
-    var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;});
-    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:5px;">Pedra deste Ambiente</div>';
-    if(ambMat){
-      h+='<div style="display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-radius:9px;padding:8px 10px;margin-bottom:7px;cursor:pointer;" onclick="var el=document.getElementById(\'matpick-'+amb.id+'\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';">';
-      h+='<div class="msw '+(ambMat.photo?'':ambMat.tx)+'" style="width:36px;height:36px;min-width:36px;border-radius:6px;flex-shrink:0;">';
-      if(ambMat.photo)h+='<img src="'+ambMat.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">';
-      h+='<div class="mshine"></div></div>';
-      h+='<div style="flex:1;min-width:0;"><div style="font-size:.78rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ambMat.nm+'</div>';
-      h+='<div style="font-size:.62rem;color:var(--gold2);">R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</div></div>';
-      h+='<span style="font-size:.65rem;color:var(--t3);">Trocar ▾</span>';
-      h+='</div>';
-    } else {
-      h+='<div style="background:rgba(255,60,60,.08);border:1px solid rgba(255,80,80,.2);border-radius:9px;padding:8px 12px;margin-bottom:7px;font-size:.73rem;color:#ff6b6b;cursor:pointer;" onclick="var el=document.getElementById(\'matpick-'+amb.id+'\');el.style.display=\'block\';">⚠️ Nenhuma pedra selecionada — toque para escolher</div>';
-    }
-    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px;max-height:320px;overflow-y:auto;">';
-    h+=buildMatAmbHtml(amb);
-    h+='</div>';
-    // Tipo selector
-    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Tipo de Ambiente</div>';
+    // STEP 1: Tipo de Ambiente
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px;">① Ambiente</div>';
     h+='<div class="amb-tipo">';
     TIPOS_AMBIENTE.forEach(function(t){
       h+='<button class="amb-tip'+(amb.tipo===t?' on':'')+'" data-amb-tipo="'+t+'" data-amb-id="'+amb.id+'">'+t+'</button>';
     });
     h+='</div>';
-    // Campos extras para Túmulo
     if(amb.tipo==='Túmulo'){
       if(!amb.tumExtra)amb.tumExtra={};
       var te=amb.tumExtra;
@@ -507,11 +532,17 @@ function renderAmbientes(){
       h+='</select></div>';
       h+='</div>';
     }
-    // Peças
-    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:10px 0 7px;">Peças</div>';
+    // STEP 2: Selecao de Pedra
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 8px;">② Pedra</div>';
+    h+='<div id="matbar-'+amb.id+'">'+buildMatBarHtml(amb)+'</div>';
+    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:8px;max-height:380px;overflow-y:auto;">';
+    h+=buildMatCatalogHtml(amb);
+    h+='</div>';
+    // Pecas
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 7px;">Peças</div>';
     h+='<div class="amb-pecas">';
     amb.pecas.forEach(function(pc,pi){
-      var rm=amb.pecas.length>1?'<button style="background:none;border:none;color:var(--red);font-size:.7rem;cursor:pointer;padding:2px 5px;font-family:Outfit,sans-serif;" onclick="rmPecaAmb('+amb.id+','+pc.id+')">✕</button>':'';
+      var rm=amb.pecas.length>1?'<button style="background:none;border:none;color:var(--red);font-size:.7rem;cursor:pointer;padding:2px 5px;font-family:Outfit,sans-serif;" onclick="rmPecaAmb('+amb.id+','+pc.id+')">&#10005;</button>':'';
       h+='<div class="peca">';
       h+='<div class="ptop"><span class="pnum">Peça '+(pi+1)+'</span>'+rm+'</div>';
       h+='<div class="f"><label>Descrição</label><input id="pd-'+pc.id+'" placeholder="Ex: Bancada" type="text" style="background:var(--s3);" value="'+escH(pc.desc||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'desc\',this.value)"></div>';
@@ -521,12 +552,10 @@ function renderAmbientes(){
       h+='</div>';
     });
     h+='</div>';
-    // Botões de peça + IA
     h+='<div class="row" style="gap:7px;margin-bottom:10px;">';
     h+='<button class="btn btn-o" style="font-size:.73rem;padding:8px;flex:1;" data-add-peca="'+amb.id+'">+ Peça</button>';
     h+='<button class="btn-ai-sm" data-ai-amb="'+amb.id+'">✨ Descrever</button>';
     h+='</div>';
-    // Serviços
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Serviços</div>';
     h+=buildSVHtml(amb);
     h+='</div></div>';
@@ -534,6 +563,7 @@ function renderAmbientes(){
   container.innerHTML=h;
   }catch(e2){console.error('renderAmbientes:',e2);toast('Erro: '+e2.message);}
 }
+
 
 // ─── ACABAMENTO AUTO (Soleira / Peitoril) ───────────────────────
 // Returns total linear meters = sum of piece comprimentos × lados
