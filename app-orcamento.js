@@ -1078,31 +1078,12 @@ function gerarPDF(){
     +'</div>'
 
     // ── ESPECIFICAÇÃO DO MATERIAL ──
-    +'<div style="background:#fff;border:1px solid #E8E0CC;border-radius:8px;padding:20px 24px;margin-bottom:28px;">'
-
-      // Grid material + acabamento
-      +'<div style="display:flex;gap:0;margin-bottom:'+(mat.fin?'18':'0')+'px;">'
-        +'<div style="flex:1;padding-right:20px;border-right:1px solid #EDE5CC;">'
-          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:6px;">Material</div>'
-          +'<div style="font-size:15px;font-weight:700;color:#1a1a1a;">'+q.mat+'</div>'
-        +'</div>'
-        +(mat.fin?'<div style="flex:1;padding-left:20px;">'
-          +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:6px;">Acabamento</div>'
-          +'<div style="font-size:15px;font-weight:700;color:#1a1a1a;">'+mat.fin+'</div>'
-        +'</div>':'<div style="flex:1;padding-left:20px;"></div>')
-      +'</div>'
-
-      // Divisor
-      +(mat.fin?'<div style="height:1px;background:#EDE5CC;margin-bottom:16px;"></div>':'')
-
-      // Inclusos
-      +'<div>'
-        +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:10px;">Incluso nesta proposta</div>'
-        +'<div style="display:flex;flex-wrap:wrap;gap:6px 0;font-family:\'Helvetica Neue\',Arial,sans-serif;">'+inclusosHtml+'</div>'
-      +'</div>'
-
+    +'<div style="border:2px solid #C9A84C;border-radius:10px;overflow:hidden;margin-bottom:28px;box-shadow:0 4px 18px rgba(201,168,76,0.12);">'
+      // Faixa com foto/textura da pedra
+      +'<div class="'+(mat.photo?'':mat.tx)+'" style="height:110px;width:100%;position:relative;overflow:hidden;'+(mat.photo?'background-image:url(\''+mat.photo+'\');background-size:cover;background-position:center;':'')+'">'        +'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.82) 0%,rgba(0,0,0,0.5) 50%,rgba(0,0,0,0.15) 100%);">'           +'<div style="position:absolute;left:22px;top:50%;transform:translateY(-50%);">'            +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.8);font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:6px;">MATERIAL SELECIONADO</div>'            +'<div style="font-size:24px;font-weight:700;color:#C9A84C;line-height:1;letter-spacing:-0.3px;">'+q.mat+'</div>'            +'<div style="font-size:9.5px;color:rgba(255,255,255,0.45);font-family:\'Helvetica Neue\',Arial,sans-serif;margin-top:5px;letter-spacing:0.8px;">'+(mat.cat||'')+(mat.cat&&mat.fin?' &middot; ':'')+(mat.fin||'')+'</div>'          +'</div>'          +(mat.desc?'<div style="position:absolute;right:22px;top:50%;transform:translateY(-50%);max-width:210px;text-align:right;">'            +'<div style="font-size:9px;color:rgba(255,255,255,0.45);font-family:\'Helvetica Neue\',Arial,sans-serif;line-height:1.5;font-style:italic;">'+mat.desc.substring(0,90)+(mat.desc.length>90?'…':'')+'</div>'          +'</div>':'')        +'</div>'      +'</div>'
+      // Detalhes e inclusos
+      +'<div style="background:#FAFAF8;padding:16px 22px;border-top:2px solid #C9A84C;">'        +(mat.fin?'<div style="display:flex;gap:0;margin-bottom:14px;">'          +'<div style="flex:1;padding-right:16px;border-right:1px solid #EDE5CC;">'            +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:4px;">Acabamento</div>'            +'<div style="font-size:13px;font-weight:700;color:#1a1a1a;">'+mat.fin+'</div>'          +'</div>'          +'<div style="flex:1;padding-left:16px;">'            +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:4px;">Categoria</div>'            +'<div style="font-size:13px;font-weight:700;color:#1a1a1a;">'+(mat.cat||'Granito')+'</div>'          +'</div>'        +'</div>'+'<div style="height:1px;background:#EDE5CC;margin-bottom:14px;"></div>':'')        +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:700;font-family:\'Helvetica Neue\',Arial,sans-serif;margin-bottom:10px;">Incluso nesta proposta</div>'        +'<div style="display:flex;flex-wrap:wrap;gap:6px 0;font-family:\'Helvetica Neue\',Arial,sans-serif;">'+inclusosHtml+'</div>'      +'</div>'
     +'</div>'
-
     // ── VALOR FINAL ──
     +'<div style="background:#0C0900;border-radius:10px;padding:26px 28px;margin-bottom:16px;position:relative;overflow:hidden;">'
 
