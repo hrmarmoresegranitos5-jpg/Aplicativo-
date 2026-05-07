@@ -249,7 +249,7 @@ function _pwaShowIOSModal(){
     +   '<div style="margin-left:auto;flex-shrink:0;font-size:1.1rem;">✓</div>'
     + '</div>'
     // Botão fechar
-    + '<button onclick="document.getElementById('_iosInstModal').remove()" style="width:100%;background:#007AFF;border:none;border-radius:14px;padding:15px;color:#fff;font-size:.95rem;font-weight:700;font-family:Outfit,sans-serif;cursor:pointer;touch-action:manipulation;">Entendi</button>'
+    + '<button onclick="document.getElementById(\'_iosInstModal\').remove()" style="width:100%;background:#007AFF;border:none;border-radius:14px;padding:15px;color:#fff;font-size:.95rem;font-weight:700;font-family:Outfit,sans-serif;cursor:pointer;touch-action:manipulation;">Entendi</button>'
     + '</div>';
 
   // Fecha ao tocar no fundo
