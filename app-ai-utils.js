@@ -126,47 +126,149 @@ function _applyMode(){
   }
 }
 
-// PWA Service Worker
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(function(){});
+
+
+// ══ PWA Service Worker — registro único com atualização automática ══
+if ('serviceWorker' in navigator) {
+  // cache-bust força browser a buscar sw.js novo do servidor a cada carregamento
+  navigator.serviceWorker.register('sw.js').then(function(reg) {
+    reg.update();
+
+    reg.addEventListener('updatefound', function() {
+      var newWorker = reg.installing;
+      if (!newWorker) return;
+      newWorker.addEventListener('statechange', function() {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          newWorker.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
+
+    if (reg.waiting) {
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+
+  }).catch(function(err) {
+    console.warn('SW erro:', err);
+  });
+
+  var _swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function() {
+    if (!_swRefreshing) { _swRefreshing = true; window.location.reload(); }
+  });
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SW_ACTIVATED' && !_swRefreshing) {
+      _swRefreshing = true; window.location.reload();
+    }
+  });
 }
 
-// PWA Install Button
+
 var _pwaEvt = null;
 var _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-var _isInApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+var _isInApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
 function _pwaShowBtn(){
   var btn = document.getElementById('btnInstalarPWA');
   if(btn && !_isInApp) btn.classList.add('on');
 }
+
+function _pwaHideBtn(){
+  var btn = document.getElementById('btnInstalarPWA');
+  if(btn) btn.classList.remove('on');
+}
+
 function pwaInstalar(){
   if(_pwaEvt){
+    // Android / Chrome — prompt nativo
     _pwaEvt.prompt();
     _pwaEvt.userChoice.then(function(r){
       _pwaEvt = null;
-      if(r.outcome==='accepted'){
-        var btn=document.getElementById('btnInstalarPWA');
-        if(btn) btn.classList.remove('on');
-        toast('App instalado com sucesso! 🎉');
+      if(r.outcome === 'accepted'){
+        _pwaHideBtn();
+        toast('App instalado! Procure o ícone na tela inicial 📲');
       }
     });
   } else if(_isIOS){
-    toast('No iPhone: toque em Compartilhar ↑ → "Adicionar à Tela de Início"');
+    // iOS — Safari não tem prompt nativo, mostra modal com instruções
+    _pwaShowIOSModal();
   } else {
-    toast('Para instalar: menu do navegador → "Adicionar à tela inicial"');
+    // Outros — instrução genérica
+    toast('Abra o menu do navegador e toque em "Adicionar à tela inicial"');
   }
 }
+
+// Modal de instruções iOS
+function _pwaShowIOSModal(){
+  // Remove modal anterior se existir
+  var old = document.getElementById('_iosInstModal');
+  if(old) old.remove();
+
+  var isIPad = /ipad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  var shareIcon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12l4-4 4 4"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M20 21H4a1 1 0 01-1-1v-4"/><path d="M21 16v4a1 1 0 01-1 1"/></svg>';
+
+  var m = document.createElement('div');
+  m.id = '_iosInstModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:0 12px 0;';
+
+  m.innerHTML =
+    '<div style="background:#1c1c1e;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 24px 40px;color:#fff;font-family:Outfit,sans-serif;">'
+    // Handle
+    + '<div style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 20px;"></div>'
+    // Título
+    + '<div style="font-size:1.1rem;font-weight:800;margin-bottom:6px;color:#fff;">Instalar no iPhone</div>'
+    + '<div style="font-size:.8rem;color:rgba(255,255,255,0.5);margin-bottom:22px;">Adicione o app à tela inicial para acesso rápido, como um app normal.</div>'
+    // Passo 1
+    + '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.06);border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
+    +   '<div style="width:32px;height:32px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.9rem;">1</div>'
+    +   '<div>'
+    +     '<div style="font-size:.88rem;font-weight:700;margin-bottom:2px;">Toque em ' + (isIPad ? 'Compartilhar' : 'Compartilhar') + '</div>'
+    +     '<div style="font-size:.75rem;color:rgba(255,255,255,0.5);">Ícone ' + (isIPad ? 'no topo da tela' : 'na barra inferior do Safari') + '</div>'
+    +   '</div>'
+    +   '<div style="margin-left:auto;flex-shrink:0;">' + shareIcon + '</div>'
+    + '</div>'
+    // Passo 2
+    + '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.06);border-radius:14px;padding:14px 16px;margin-bottom:10px;">'
+    +   '<div style="width:32px;height:32px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.9rem;">2</div>'
+    +   '<div>'
+    +     '<div style="font-size:.88rem;font-weight:700;margin-bottom:2px;">Role e toque em</div>'
+    +     '<div style="font-size:.8rem;color:#C9A84C;font-weight:700;">"Adicionar à Tela de Início"</div>'
+    +   '</div>'
+    +   '<div style="margin-left:auto;flex-shrink:0;font-size:1.4rem;">＋</div>'
+    + '</div>'
+    // Passo 3
+    + '<div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.06);border-radius:14px;padding:14px 16px;margin-bottom:24px;">'
+    +   '<div style="width:32px;height:32px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:.9rem;">3</div>'
+    +   '<div>'
+    +     '<div style="font-size:.88rem;font-weight:700;margin-bottom:2px;">Toque em <span style="color:#C9A84C;">Adicionar</span></div>'
+    +     '<div style="font-size:.75rem;color:rgba(255,255,255,0.5);">Canto superior direito da tela</div>'
+    +   '</div>'
+    +   '<div style="margin-left:auto;flex-shrink:0;font-size:1.1rem;">✓</div>'
+    + '</div>'
+    // Botão fechar
+    + '<button onclick="document.getElementById(\'_iosInstModal\').remove()" style="width:100%;background:#007AFF;border:none;border-radius:14px;padding:15px;color:#fff;font-size:.95rem;font-weight:700;font-family:Outfit,sans-serif;cursor:pointer;touch-action:manipulation;">Entendi</button>'
+    + '</div>';
+
+  // Fecha ao tocar no fundo
+  m.addEventListener('click', function(e){
+    if(e.target === m) m.remove();
+  });
+
+  document.body.appendChild(m);
+}
+
 window.addEventListener('beforeinstallprompt', function(e){
   e.preventDefault();
   _pwaEvt = e;
   _pwaShowBtn();
 });
+
 window.addEventListener('appinstalled', function(){
-  var btn=document.getElementById('btnInstalarPWA');
-  if(btn) btn.classList.remove('on');
+  _pwaHideBtn();
   _pwaEvt = null;
 });
+
 if(_isIOS && !_isInApp){ _pwaShowBtn(); }
 
 // ── Micro-interactions ──
