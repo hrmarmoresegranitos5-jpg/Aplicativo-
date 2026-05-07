@@ -127,57 +127,45 @@ function _applyMode(){
 }
 
 
-// ══ PWA Service Worker — registro com atualização automática ══
-if ('serviceWorker' in navigator) {
-  // Registra com cache-bust para garantir que o browser sempre busque o sw.js novo
-  var swUrl = 'sw.js?v=' + Date.now();
-  navigator.serviceWorker.register(swUrl).then(function(reg) {
 
-    // Força verificação imediata de atualização a cada abertura do app
+// ══ PWA Service Worker — registro único com atualização automática ══
+if ('serviceWorker' in navigator) {
+  // cache-bust força browser a buscar sw.js novo do servidor a cada carregamento
+  var swUrl = 'sw.js?v=' + Date.now();
+
+  navigator.serviceWorker.register(swUrl).then(function(reg) {
     reg.update();
 
-    // Quando um novo SW for detectado aguardando
     reg.addEventListener('updatefound', function() {
       var newWorker = reg.installing;
       if (!newWorker) return;
       newWorker.addEventListener('statechange', function() {
-        // Quando instalado e há um SW ativo (= há versão antiga rodando)
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          // Manda o novo SW pular a fila e ativar já
           newWorker.postMessage({ type: 'SKIP_WAITING' });
         }
       });
     });
 
-    // Se já havia um SW esperando no momento do registro (ex: aba reaberta)
     if (reg.waiting) {
       reg.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
 
   }).catch(function(err) {
-    console.warn('SW registro falhou:', err);
+    console.warn('SW erro:', err);
   });
 
-  // Quando o novo SW assumir o controle, recarrega a página para pegar os arquivos novos
-  var refreshing = false;
+  var _swRefreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', function() {
-    if (!refreshing) {
-      refreshing = true;
-      window.location.reload();
-    }
+    if (!_swRefreshing) { _swRefreshing = true; window.location.reload(); }
   });
-
-  // Ouve aviso do SW dizendo que ativou (mensagem SW_ACTIVATED)
   navigator.serviceWorker.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'SW_ACTIVATED' && !refreshing) {
-      refreshing = true;
-      window.location.reload();
+    if (e.data && e.data.type === 'SW_ACTIVATED' && !_swRefreshing) {
+      _swRefreshing = true; window.location.reload();
     }
   });
 }
 
 
-// ══ PWA Install Button ══
 var _pwaEvt = null;
 var _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 var _isInApp = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
