@@ -1,0 +1,1563 @@
+// ══════════════════════════════════
+// MATERIAL, SERVIÇOS, AMBIENTES, CÁLCULO
+// ══════════════════════════════════
+
+// ═══ PHOTO PICKER ═══
+function pickPhoto(target,idx){fileTarget={t:target,i:idx};document.getElementById('fileInp').click();}
+function onFile(e){
+  var file=e.target.files[0];if(!file||!fileTarget)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    // Resize image before saving to avoid localStorage overflow
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var maxW=500;
+      var scale=Math.min(1,maxW/img.width);
+      canvas.width=Math.round(img.width*scale);
+      canvas.height=Math.round(img.height*scale);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      var d=canvas.toDataURL('image/jpeg',0.78);
+      var t=fileTarget.t,i=fileTarget.i;
+      if(t==='stone')CFG.stones[i].photo=d;
+      else if(t==='coz')CFG.coz[i].photo=d;
+      else if(t==='lav')CFG.lav[i].photo=d;
+      else if(t==='ac')CFG.ac[i].photo=d;
+      svCFG();
+      buildMat();buildCatalog();buildCubaList();buildCfg();
+      toast('✓ Foto atualizada!');
+    };
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);
+  e.target.value='';
+}
+
+// ═══ MATERIAL ═══
+function buildMat(){
+  var GRUPOS=[
+    {cat:'Granito Cinza',icon:'🩶'},
+    {cat:'Granito Preto',icon:'🖤'},
+    {cat:'Granito Branco',icon:'🤍'},
+    {cat:'Granito Verde',icon:'💚'},
+    {cat:'Mármore',icon:'🌿'},
+    {cat:'Travertino',icon:'🟤'},
+    {cat:'Quartzito',icon:'💎'},
+    {cat:'Ultra Compacto',icon:'⚡'}
+  ];
+  var h='';
+  GRUPOS.forEach(function(grp){
+    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat;});
+    if(!ss.length)return;
+    h+='<div class="mcat">'+grp.icon+' '+grp.cat+'</div>';
+    h+='<div class="mscroll">';
+    ss.forEach(function(s){
+      var on=s.id===selMat?'on':'';
+      h+='<div class="mc '+on+'" data-mat="'+s.id+'">';
+      h+='<div class="msw '+(s.photo?'':s.tx)+'">';
+      if(s.photo)h+='<img src="'+s.photo+'" alt="">';
+      h+='<div class="mshine"></div>';
+      h+='</div>';
+      h+='<div class="mbody">';
+      h+='<div class="mnm">'+s.nm+'</div>';
+      h+='<div class="mfin">'+s.fin+' · R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+  });
+  document.getElementById('matArea').innerHTML=h;
+}
+function pickMat(id){selMat=id;document.querySelectorAll('.mc').forEach(function(c){c.classList.toggle('on',c.dataset.mat===id);});}
+
+// ═══ SERVIÇOS ═══
+var SV_DEFS={
+'Cozinha':[
+  {g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'},{k:'s_boleada',l:'Sainha Boleada',u:'sf'},{k:'s_slim',l:'Sainha Slim',u:'sf'}]},
+  {g:'Frontão',its:[{k:'frontao',l:'Frontão Reto',u:'sf'},{k:'frontao_chf',l:'Frontão Chanfrado',u:'sf'}]},
+  {g:'Furos & Recortes',its:[{k:'forn',l:'Furo Torneira',u:'un',fx:0},{k:'fralo',l:'Furo Ralo',u:'un',fx:0},{k:'cook',l:'Recorte Cooktop',u:'un',fx:1}]},
+  {g:'Rebaixo',its:[{k:'reb_n',l:'Rebaixo Normal',u:'un',fx:1},{k:'reb_a',l:'Rebaixo Americano',u:'un',fx:1}]},
+  {g:'Cuba',its:[{k:'cuba_coz',l:'Escolher cuba inox ou esculpida',u:'cuba',ctp:'coz'}]},
+  {g:'Área Molhada',its:[{k:'rodape',l:'Rodapé de Pedra',u:'sf'}]},
+  {g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},
+  {g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},
+  {g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}
+]};
+SV_DEFS.Banheiro=[
+  {g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'},{k:'s_boleada',l:'Sainha Boleada',u:'sf'},{k:'s_slim',l:'Sainha Slim',u:'sf'}]},
+  {g:'Frontão',its:[{k:'frontao',l:'Frontão Reto',u:'sf'},{k:'frontao_chf',l:'Frontão Chanfrado',u:'sf'}]},
+  {g:'Furos',its:[{k:'forn',l:'Furo Torneira',u:'un',fx:0},{k:'fralo',l:'Furo Ralo',u:'un',fx:0}]},
+  {g:'Área Molhada',its:[{k:'rodape',l:'Rodapé de Pedra',u:'sf'}]},
+  {g:'Cuba / Lavatório',its:[{k:'cuba_lav',l:'Escolher cuba ou lavatório',u:'cuba',ctp:'lav'}]},
+  {g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},
+  {g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},
+  {g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}
+];
+SV_DEFS.Lavabo=[{g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'}]},{g:'Frontão',its:[{k:'frontao',l:'Frontão Reto',u:'sf'},{k:'frontao_chf',l:'Frontão Chanfrado',u:'sf'}]},{g:'Furos',its:[{k:'forn',l:'Furo Torneira',u:'un',fx:0}]},{g:'Área Molhada',its:[{k:'rodape',l:'Rodapé de Pedra',u:'sf'}]},{g:'Cuba / Lavatório',its:[{k:'cuba_lav',l:'Escolher cuba ou lavatório',u:'cuba',ctp:'lav'}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
+SV_DEFS.Soleira=[{g:'Acabamento',its:[{k:'sol_sem',l:'Sem acabamento',u:'acb_auto',lados:0},{k:'sol1',l:'Acabamento 1 lado',u:'acb_auto',lados:1},{k:'sol2',l:'Acabamento 2 lados',u:'acb_auto',lados:2}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
+SV_DEFS.Peitoril=[{g:'Tipo',its:[{k:'peit_reto',l:'Peitoril Reto',u:'ml'},{k:'peit_ping',l:'c/ Pingadeira',u:'ml'},{k:'peit_col',l:'c/ Pedra Colada + Pingadeira',u:'ml'},{k:'peit_portal',l:'p/ Portal Madeira',u:'ml'}]},{g:'Acabamento',its:[{k:'peit_sem',l:'Sem acabamento',u:'acb_auto',lados:0},{k:'peit_acb1',l:'Acabamento 1 lado',u:'acb_auto',lados:1},{k:'peit_acb2',l:'Acabamento 2 lados',u:'acb_auto',lados:2}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
+SV_DEFS.Escada=[{g:'Sainha',its:[{k:'s_reta',l:'Sainha Reta',u:'sf'},{k:'s_45',l:'Sainha 45°',u:'sf'},{k:'s_boleada',l:'Sainha Boleada',u:'sf'}]},{g:'Frontão',its:[{k:'frontao',l:'Frontão Reto',u:'sf'},{k:'frontao_chf',l:'Frontão Chanfrado',u:'sf'}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
+SV_DEFS.Fachada=[{g:'Fixação',its:[{k:'tubo',l:'Tubo Metálico',u:'un',fx:0},{k:'cant',l:'Cantoneira',u:'un',fx:0}]},{g:'Instalação',its:[{k:'inst',l:'Instalação Padrão',u:'un',fx:1},{k:'inst_c',l:'Instalação Complexa',u:'un',fx:1}]},{g:'Deslocamento',its:[{k:'desl_cid',l:'Na cidade',u:'livre'},{k:'desl_for',l:'Fora da cidade',u:'km',fx:0}]}];
+SV_DEFS.Outro=SV_DEFS.Cozinha;
+
+SV_DEFS.Tumulo=[
+  {g:'🪨 Estrutura de Pedra',its:[
+    {k:'tum_tampa',  l:'Tampa',                  u:'sf'},
+    {k:'tum_lat',    l:'Laterais (×2)',           u:'sf'},
+    {k:'tum_front',  l:'Frontais (×2)',           u:'sf'},
+    {k:'tum_base',   l:'Base',                    u:'sf'},
+    {k:'tum_det',    l:'Detalhe Superior',        u:'sf'},
+    {k:'tum_sainha', l:'Sainha Frontal',          u:'sf'},
+    {k:'tum_mol',    l:'Moldura',                 u:'ml'},
+    {k:'tum_ping',   l:'Pingadeira',              u:'ml'}
+  ]},
+  {g:'⚰️ Gavetas / Compartimentos',its:[
+    {k:'tum_gav1',   l:'Frente de Gaveta — 1ª',  u:'sf'},
+    {k:'tum_gav2',   l:'Frente de Gaveta — 2ª',  u:'sf'},
+    {k:'tum_gav3',   l:'Frente de Gaveta — 3ª',  u:'sf'}
+  ]},
+  {g:'🪦 Lápide / Plaquinha / Foto',its:[
+    {k:'tum_lapide', l:'Lápide de Granito',       u:'un', fx:1},
+    {k:'tum_plaq',   l:'Plaquinha Gravada',       u:'un', fx:1},
+    {k:'tum_foto',   l:'Foto em Porcelana',       u:'un', fx:1},
+    {k:'tum_cruz',   l:'Cruz em Granito',         u:'un', fx:1}
+  ]},
+  {g:'🔧 Acabamentos',its:[
+    {k:'tum_rec',    l:'Recorte / Furo',          u:'un', fx:0},
+    {k:'tum_pol',    l:'Polimento Extra',          u:'un', fx:1},
+    {k:'tum_bisel',  l:'Borda Biselada',          u:'ml'}
+  ]},
+  {g:'🧱 Construção — Pedreiro',its:[
+    {k:'tum_fund',   l:'Fundação',                u:'livre'},
+    {k:'tum_lev',    l:'Levantamento Alvenaria',  u:'livre'},
+    {k:'tum_reb',    l:'Reboco / Chapisco',       u:'livre'},
+    {k:'tum_conc',   l:'Concreto Armado',         u:'livre'},
+    {k:'tum_cpiso',  l:'Contra-piso',             u:'livre'},
+    {k:'tum_acob',   l:'Acabamento Final Obra',   u:'livre'}
+  ]},
+  {g:'🪣 Materiais de Construção',its:[
+    {k:'tum_cim',    l:'Cimento / Areia',         u:'livre'},
+    {k:'tum_cola',   l:'Cola p/ Granito',         u:'livre'},
+    {k:'tum_rej',    l:'Rejunte',                 u:'livre'},
+    {k:'tum_ferro',  l:'Ferro / Tela',            u:'livre'},
+    {k:'tum_tijolo', l:'Tijolos / Blocos',        u:'livre'},
+    {k:'tum_frete',  l:'Frete / Entrega Material',u:'livre'}
+  ]},
+  {g:'🔨 Mão de Obra',its:[
+    {k:'tum_mont',   l:'Montagem / Instalação',   u:'un', fx:1},
+    {k:'tum_montc',  l:'Instalação Complexa',     u:'un', fx:1}
+  ]},
+  {g:'Deslocamento',its:[
+    {k:'desl_cid',   l:'Na cidade',               u:'livre'},
+    {k:'desl_for',   l:'Fora da cidade',          u:'km', fx:0}
+  ]}
+];
+
+// Túmulo usa o sistema padrão (sainha, acabamentos, etc.) + serviços específicos de túmulo
+SV_DEFS['Túmulo'] = SV_DEFS.Cozinha.concat(SV_DEFS.Tumulo);
+
+function getSVGrp(){return SV_DEFS[document.getElementById('oTipo').value]||SV_DEFS.Cozinha;}
+function getIt(k){var g=getSVGrp();for(var i=0;i<g.length;i++){for(var j=0;j<g[i].its.length;j++){if(g[i].its[j].k===k)return g[i].its[j];}}return null;}
+function getPr(k){return CFG.sv[k]||0;}
+
+function buildSV(){
+  selCuba=null;
+  var g=getSVGrp(),h='';
+  g.forEach(function(grp){
+    // acb_auto: render as radio button group (Acabamento auto for Soleira/Peitoril)
+    var isAcbGrp=grp.its.length>0&&grp.its[0].u==='acb_auto';
+    if(isAcbGrp){
+      var selAcb=null;
+      grp.its.forEach(function(it){if(sv[it.k])selAcb=it.k;});
+      if(!selAcb)selAcb=grp.its[0].k;
+      h+='<div class="svblk"><div class="svhd">'+grp.g+'</div>';
+      h+='<div style="display:flex;gap:6px;padding:8px 12px 10px;flex-wrap:wrap;">';
+      grp.its.forEach(function(it){
+        var active=selAcb===it.k;
+        var autoMl=_calcAcbAutoMl(amb,it.lados||0);
+        var pr=getPr(it.k);
+        var custo=autoMl>0&&pr>0?(' · R$ '+fm(autoMl*pr)):'';
+        var subtitle=it.lados>0&&autoMl>0?(autoMl.toFixed(2)+'ml'+custo):it.lados===0?'sem custo':'';
+        h+='<div onclick="togAcbAuto('+amb.id+',\''+it.k+'\')" style="cursor:pointer;flex:1;min-width:90px;text-align:center;padding:9px 8px;border-radius:10px;border:1.5px solid '+(active?'var(--gold)':'var(--bd2)')+';background:'+(active?'rgba(201,168,76,.12)':'var(--s2)')+';transition:all .15s;">'
+          +'<div style="font-size:.78rem;font-weight:'+(active?'700':'500')+';color:'+(active?'var(--gold)':'var(--t2)')+'">'+it.l+'</div>'
+          +(subtitle?'<div style="font-size:.6rem;color:var(--t4);margin-top:2px;">'+subtitle+'</div>':'')
+          +'</div>';
+      });
+      h+='</div></div>';
+      return;
+    }
+    h+='<div class="svblk"><div class="svhd">'+grp.g+'</div>';
+    grp.its.forEach(function(it){
+      var pr=getPr(it.k);
+      var hint=it.u==='sf'?'R$ '+pr+'/ml + m² pedra':it.u==='ml'?'R$ '+pr+'/ml':it.u==='km'?'R$ '+pr+'/km':it.u==='cuba'?'Selecionar modelo':it.u==='livre'?'Valor livre':it.fx===1&&pr?'R$ '+pr:'R$ '+pr;
+      h+='<div class="svrow" id="sr-'+it.k+'" data-sv="'+it.k+'"><div class="svchk">✓</div><div class="svlbl">'+it.l+'<span class="svph">'+hint+'</span></div></div>';
+      if(it.u==='sf'){
+        h+='<div class="sfw" id="sf-'+it.k+'"><div class="sfl">'+it.l+'</div><div class="sfr"><div class="sf"><span>Comprimento (ml)</span><input type="number" id="sw-'+it.k+'" placeholder="2.50" step="0.01" min="0" oninput="calcSF(\''+it.k+'\')" onclick="event.stopPropagation()"></div><div class="sfx">×</div><div class="sf"><span>Altura (cm)</span><input type="number" id="sh-'+it.k+'" placeholder="6" step="0.5" min="0" oninput="calcSF(\''+it.k+'\')" onclick="event.stopPropagation()"></div><div class="sf"><span>Qtd</span><input type="number" id="sq-'+it.k+'" value="1" min="1" style="width:48px;" oninput="calcSF(\''+it.k+'\')" onclick="event.stopPropagation()"></div></div><div class="sfres" id="sfr-'+it.k+'"></div></div>';
+      } else if(it.u==='cuba'){
+        h+='<div class="svcuba" id="sq-'+it.k+'"><span id="cdisp-'+it.k+'"></span></div>';
+      } else if(it.u==='livre'){
+        h+='<div class="svxtr" id="sq-'+it.k+'"><input type="number" id="si-'+it.k+'" placeholder="valor" step="1" min="0" onclick="event.stopPropagation()"><span class="svunit">reais</span></div>';
+      } else if(!it.fx){
+        h+='<div class="svxtr" id="sq-'+it.k+'"><input type="number" id="si-'+it.k+'" placeholder="'+(it.u==='ml'?'metros':'qtd')+'" step="0.1" min="0" onclick="event.stopPropagation()"><span class="svunit">'+it.u+'</span></div>';
+      } else {
+        h+='<div id="sq-'+it.k+'" style="display:none;"></div>';
+      }
+    });
+    h+='</div>';
+  });
+  document.getElementById('svArea').innerHTML=h;
+}
+
+function calcSF(k){
+  var ml=+document.getElementById('sw-'+k).value||0;
+  var altCm=+document.getElementById('sh-'+k).value||0;
+  var q=+document.getElementById('sq-'+k).value||1;
+  var el=document.getElementById('sfr-'+k);if(!el)return;
+  if(ml&&altCm){
+    var m2=ml*(altCm/100)*q;
+    var mat=CFG.stones.find(function(s){return s.id===selMat;});
+    var pv=mat?m2*mat.pr:0;
+    var mo=ml*q*getPr(k);
+    el.innerHTML='<span style="color:var(--grn)">Pedra: '+m2.toFixed(3)+'m² → R$ '+fm(pv)+'</span>  <span style="color:var(--gold2)">M.O.: R$ '+fm(mo)+'</span>';
+  }else{el.textContent='';}
+}
+
+// ═══ CUBA PICKER ═══
+function openCubaPick(tipo,svKey){
+  _cubaPickKey=svKey;
+  var lista=tipo==='coz'?CFG.coz:CFG.lav;
+  document.getElementById('cpTitle').textContent=tipo==='coz'?'Cubas para Cozinha':'Cubas para Banheiro/Lavabo';
+  document.getElementById('cpSub').textContent='Cubas HR (fornecemos) ou cliente traz (só mão de obra)';
+  var h='';
+  // Cliente option
+  var instCli=tipo==='coz'?160:280;
+  h+='<div class="cpcard" data-pcuba="__cli__" data-ctype="'+tipo+'"><div class="cpthumb" style="background:var(--s3);font-size:1.4rem;color:var(--t3);display:grid;place-items:center;">📦</div><div><div class="cpbrand">Cliente Fornece</div><div class="cpnm">Só Mão de Obra</div><div class="cpdim">Cliente compra, HR instala</div><div class="cppr">M.O.: <b>R$ '+instCli+'</b></div></div></div>';
+  h+='<div style="font-size:.57rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:13px 0 8px;">Cubas HR — fornecemos e instalamos</div>';
+  lista.filter(function(c){return c.pr>0;}).forEach(function(c){
+    var tot=c.pr+c.inst;
+    var _prStr=c.pr>0?'Cuba <b>R$ '+c.pr+'</b> + M.O. R$ '+c.inst+' = <b>R$ '+tot+'</b>':'M.O. <b>R$ '+c.inst+'</b> (produto a consultar)';
+    h+='<div class="cpcard" data-pcuba="'+c.id+'" data-ctype="'+tipo+'"><div class="cpthumb">'+(c.photo?'<img src="'+c.photo+'" alt="">':(c.tipo?'🚿':'🔧'))+'</div><div><div class="cpbrand">'+c.brand+'</div><div class="cpnm">'+c.nm+'</div><div class="cpdim">'+c.dim+'</div><div class="cppr">'+_prStr+'</div></div></div>';
+  });
+  // Esculpidas — disponível para cozinha e banheiro/lavabo
+  // Para cozinha usa CFG.lav (esculpidas estão lá) pois lav tem tipo Esculpida
+  var escLista=CFG.lav.filter(function(x){return x.tipo==='Esculpida';});
+  if(escLista.length){
+    h+='<div style="font-size:.57rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:13px 0 8px;">🪨 Cuba Esculpida na Pedra</div>';
+    h+='<div style="background:var(--s3);border:1px solid var(--bd2);border-radius:11px;padding:13px 14px;margin-bottom:6px;">';
+    h+='<div style="font-size:.7rem;color:var(--t2);line-height:1.6;margin-bottom:10px;">Cuba escavada direto na pedra. Informe as dimensões para calcular pedra + mão de obra.</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">';
+    h+='<div><div style="font-size:.6rem;color:var(--t3);margin-bottom:3px;">Comprimento (cm)</div><input type="number" id="escW" placeholder="50" min="20" onclick="event.stopPropagation()" style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;color:var(--tx);font-family:Outfit,sans-serif;font-size:.85rem;outline:none;"></div>';
+    h+='<div><div style="font-size:.6rem;color:var(--t3);margin-bottom:3px;">Largura (cm)</div><input type="number" id="escH" placeholder="40" min="20" onclick="event.stopPropagation()" style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;color:var(--tx);font-family:Outfit,sans-serif;font-size:.85rem;outline:none;"></div>';
+    h+='<div><div style="font-size:.6rem;color:var(--t3);margin-bottom:3px;">Profundidade (cm)</div><input type="number" id="escD" placeholder="20" min="10" onclick="event.stopPropagation()" style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;color:var(--tx);font-family:Outfit,sans-serif;font-size:.85rem;outline:none;"></div>';
+    h+='</div>';
+    h+='<div id="escPreviewBox" style="font-size:.72rem;color:var(--t3);margin-bottom:10px;">Preencha as dimensões e selecione o tipo abaixo</div>';
+    h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:8px;">Tipo de acabamento:</div>';
+    escLista.forEach(function(esc){
+      h+='<button onclick="pickEsculpida(\''+esc.id+'\',\''+tipo+'\')" style="width:100%;background:var(--gdim);border:1px solid var(--gold3);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-family:Outfit,sans-serif;">';
+      h+='<div style="text-align:left;"><div style="font-size:.82rem;font-weight:700;color:var(--tx);">'+esc.nm+'</div><div style="font-size:.65rem;color:var(--t3);margin-top:2px;">M.O. base: R$ '+esc.inst+'</div></div>';
+      h+='<div style="font-size:.72rem;color:var(--gold2);font-weight:700;">Selecionar →</div>';
+      h+='</button>';
+    });
+    h+='</div>';
+  }
+  document.getElementById('cpList').innerHTML=h;
+  showMd('cubaPickMd');
+}
+function pickEsculpida(escId, tipo){
+  var escW=+(document.getElementById('escW')||{}).value||0;
+  var escH=+(document.getElementById('escH')||{}).value||0;
+  var escD=+(document.getElementById('escD')||{}).value||0;
+  if(!escW||!escH||!escD){toast('Informe comprimento, largura e profundidade da cuba');return;}
+
+  var esc=CFG.lav.find(function(x){return x.id===escId;});
+  if(!esc)return;
+
+  // Cálculo da pedra removida:
+  // Fundo (comprimento × largura) + 4 paredes internas
+  var aFundo=(escW*escH)/10000;
+  var aParedes=(2*(escW*escD)+2*(escH*escD))/10000;
+  var aExtra=+(aFundo+aParedes).toFixed(4);
+
+  // Mão de obra: base + R$8 por litro removido
+  var volumeLt=(escW*escH*escD)/1000;
+  var moBase=esc.inst;
+  var moExtra=Math.round(volumeLt*8);
+  var moTotal=moBase+moExtra;
+
+  // Pedra: área removida × preço/m²
+  var mat=CFG.stones.find(function(s){return s.id===selMat;})||{pr:0,nm:''};
+  var valorPedra=Math.round(aExtra*mat.pr);
+  var totalCuba=moTotal+valorPedra;
+
+  var tipoFinal=tipo||'lav';
+  var svKey=tipoFinal==='coz'?'cuba_coz':'cuba_lav';
+  var dim=escW+'×'+escH+'×'+escD+'cm';
+  var nm=esc.nm+' '+dim;
+
+  var cubaObj={
+    id:esc.id,
+    nm:nm,
+    total:totalCuba,
+    tipo:tipoFinal,
+    escExtra:{aExtra:aExtra,moBase:moBase,moExtra:moExtra,valorPedra:valorPedra,
+              dim:dim,w:escW,h:escH,d:escD,volumeLt:+volumeLt.toFixed(1)}
+  };
+
+  if(_cubaPickAmbId!==null){
+    var amb=ambientes.find(function(a){return a.id==_cubaPickAmbId;});
+    if(amb){
+      amb.selCuba=cubaObj;
+      if(!amb.svState)amb.svState={};
+      amb.svState[svKey]={};
+    }
+    closeAll();
+    renderAmbientes();
+    toast('✓ '+nm+' — R$ '+fm(totalCuba)+' | M.O. R$ '+fm(moTotal)+' + Pedra R$ '+fm(valorPedra));
+    _cubaPickAmbId=null;
+  }
+}
+
+function pickCuba(id,tipo){
+  var lista=tipo==='coz'?CFG.coz:CFG.lav;
+  var instCli=tipo==='coz'?160:280;
+  var cubaObj;
+  if(id==='__cli__'){
+    cubaObj={id:'__cli__',nm:'Cuba do cliente',total:instCli,tipo:tipo};
+  } else {
+    var c=lista.find(function(x){return x.id===id;});
+    if(!c)return;
+    var isEsc=c.tipo==='Esculpida';
+    cubaObj={id:c.id,nm:(c.brand?' '+c.brand:'')+(c.nm?(' '+c.nm):''),total:isEsc?c.inst:(c.pr+c.inst),tipo:tipo};
+  }
+  // Apply to correct ambiente
+  if(_cubaPickAmbId!==null){
+    var amb=ambientes.find(function(a){return a.id==_cubaPickAmbId;});
+    if(amb){
+      amb.selCuba=cubaObj;
+      // Ensure the sv key is marked on
+      var k=tipo==='coz'?'cuba_coz':'cuba_lav';
+      if(!amb.svState)amb.svState={};
+      amb.svState[k]={};
+    }
+    closeAll();
+    renderAmbientes();
+    toast('✓ '+cubaObj.nm.trim());
+    _cubaPickAmbId=null;
+  } else {
+    // Legacy fallback
+    closeAll();
+    toast('✓ '+cubaObj.nm.trim());
+  }
+}
+
+// ═══ AMBIENTES ═══
+var TIPOS_AMBIENTE=['Cozinha','Banheiro','Lavabo','Soleira','Peitoril','Escada','Fachada','Túmulo','Outro'];
+
+function addAmbiente(){
+  var id=Date.now();
+  ambientes.push({id:id,tipo:'Cozinha',pecas:[],selCuba:null,svState:{},acState:{}});
+  addPecaAmb(id);
+  renderAmbientes();
+}
+
+function rmAmbiente(id){
+  if(ambientes.length<=1){toast('Precisa ter pelo menos 1 ambiente');return;}
+  ambientes=ambientes.filter(function(a){return a.id!=id;});
+  renderAmbientes();
+}
+
+function setAmbTipo(id,tipo){
+  var amb=ambientes.find(function(a){return a.id==id;});
+  if(!amb)return;
+  amb.tipo=tipo;
+  amb.selCuba=null;
+  amb.svState={};
+  amb.acState={};
+  // Init default acb_auto selection (first option = sem acabamento)
+  var gNew=SV_DEFS[tipo]||SV_DEFS.Cozinha;
+  gNew.forEach(function(grp){
+    if(grp.its.length>0&&grp.its[0].u==='acb_auto'){
+      amb.svState[grp.its[0].k]={lados:grp.its[0].lados||0};
+    }
+  });
+  renderAmbientes();
+}
+
+function addPecaAmb(ambId){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  amb.pecas.push({id:Date.now(),desc:'',w:0,h:0,q:1});
+  renderAmbientes();
+}
+
+function rmPecaAmb(ambId,pcId){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(amb.pecas.length<=1){toast('Precisa ter pelo menos 1 peça');return;}
+  amb.pecas=amb.pecas.filter(function(p){return p.id!=pcId;});
+  renderAmbientes();
+}
+
+function updPcAmb(ambId,pcId,prop,val){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  var pc=amb.pecas.find(function(p){return p.id===pcId;});
+  if(pc)pc[prop]=val;
+}
+
+// Legacy - kept for AI apply compatibility
+function addPeca(){if(ambientes.length>0)addPecaAmb(ambientes[0].id);}
+function updPc(id,prop,val){ambientes.forEach(function(a){var p=a.pecas.find(function(x){return x.id===id;});if(p)p[prop]=val;});}
+function remPeca(id){ambientes.forEach(function(a){if(a.pecas.length>1){a.pecas=a.pecas.filter(function(p){return p.id!==id;});}});renderAmbientes();}
+
+function renderAmbientes(){
+  try{
+  var container=document.getElementById('ambientesList');
+  if(!container)return;
+  var h='';
+  ambientes.forEach(function(amb,idx){
+    var num=idx+1;
+    h+='<div class="ambiente">';
+    // Header
+    h+='<div class="amb-header">';
+    h+='<span class="amb-title">'+num+'º Ambiente — '+amb.tipo+'</span>';
+    h+='<button class="amb-rm" data-rm-amb="'+amb.id+'">✕ Remover</button>';
+    h+='</div>';
+    h+='<div class="amb-body">';
+    // Tipo selector
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Tipo de Ambiente</div>';
+    h+='<div class="amb-tipo">';
+    TIPOS_AMBIENTE.forEach(function(t){
+      h+='<button class="amb-tip'+(amb.tipo===t?' on':'')+'" data-amb-tipo="'+t+'" data-amb-id="'+amb.id+'">'+t+'</button>';
+    });
+    h+='</div>';
+    // Campos extras para Túmulo
+    if(amb.tipo==='Túmulo'){
+      if(!amb.tumExtra)amb.tumExtra={};
+      var te=amb.tumExtra;
+      h+='<div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.18);border-radius:10px;padding:12px;margin:10px 0;">';
+      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px;">⚰️ Dados do Túmulo</div>';
+      h+='<div class="f"><label>Falecido(a)</label><input placeholder="Nome do falecido" type="text" style="background:var(--s3);" value="'+escH(te.falecido||'')+'" oninput="updTumExtra('+amb.id+',\'falecido\',this.value)"></div>';
+      h+='<div class="f"><label>Cemitério</label><input placeholder="Nome do cemitério" type="text" style="background:var(--s3);" value="'+escH(te.cemiterio||'')+'" oninput="updTumExtra('+amb.id+',\'cemiterio\',this.value)"></div>';
+      h+='<div class="r2"><div class="f"><label>Quadra</label><input placeholder="Q-12" type="text" style="background:var(--s3);" value="'+escH(te.quadra||'')+'" oninput="updTumExtra('+amb.id+',\'quadra\',this.value)"></div>';
+      h+='<div class="f"><label>Lote / Número</label><input placeholder="L-04" type="text" style="background:var(--s3);" value="'+escH(te.lote||'')+'" oninput="updTumExtra('+amb.id+',\'lote\',this.value)"></div></div>';
+      h+='<div class="f"><label>Tipo de Túmulo</label><select style="background:var(--s3);color:var(--tx);border:1px solid var(--bd);border-radius:7px;padding:8px 10px;width:100%;font-size:.82rem;font-family:Outfit,sans-serif;" onchange="updTumExtra('+amb.id+',\'subtipo\',this.value)">';
+      ['Simples','Gaveta Dupla','Gaveta Tripla','Jazigo Familiar','Reforma / Revestimento','Monumento / Capelinha'].forEach(function(st){
+        h+='<option value="'+st+'"'+(te.subtipo===st?' selected':'')+'>'+st+'</option>';
+      });
+      h+='</select></div>';
+      h+='</div>';
+    }
+    // Peças
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:10px 0 7px;">Peças</div>';
+    h+='<div class="amb-pecas">';
+    amb.pecas.forEach(function(pc,pi){
+      var rm=amb.pecas.length>1?'<button style="background:none;border:none;color:var(--red);font-size:.7rem;cursor:pointer;padding:2px 5px;font-family:Outfit,sans-serif;" onclick="rmPecaAmb('+amb.id+','+pc.id+')">✕</button>':'';
+      h+='<div class="peca">';
+      h+='<div class="ptop"><span class="pnum">Peça '+(pi+1)+'</span>'+rm+'</div>';
+      h+='<div class="f"><label>Descrição</label><input id="pd-'+pc.id+'" placeholder="Ex: Bancada" type="text" style="background:var(--s3);" value="'+escH(pc.desc||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'desc\',this.value)"></div>';
+      h+='<div class="r2"><div class="f"><label>Comprimento (cm)</label><input id="pw-'+pc.id+'" placeholder="300" type="number" style="background:var(--s3);" value="'+(pc.w||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'w\',+this.value)"></div>';
+      h+='<div class="f"><label>Largura (cm)</label><input id="ph-'+pc.id+'" placeholder="60" type="number" style="background:var(--s3);" value="'+(pc.h||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'h\',+this.value)"></div></div>';
+      h+='<div style="max-width:130px;"><div class="f"><label>Quantidade</label><input id="pq-'+pc.id+'" type="number" style="background:var(--s3);" value="'+(pc.q||1)+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'q\',+this.value||1)"></div></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+    // Botões de peça + IA
+    h+='<div class="row" style="gap:7px;margin-bottom:10px;">';
+    h+='<button class="btn btn-o" style="font-size:.73rem;padding:8px;flex:1;" data-add-peca="'+amb.id+'">+ Peça</button>';
+    h+='<button class="btn-ai-sm" data-ai-amb="'+amb.id+'">✨ Descrever</button>';
+    h+='</div>';
+    // Serviços
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Serviços</div>';
+    h+=buildSVHtml(amb);
+    h+='</div></div>';
+  });
+  container.innerHTML=h;
+  }catch(e2){console.error('renderAmbientes:',e2);toast('Erro: '+e2.message);}
+}
+
+// ─── ACABAMENTO AUTO (Soleira / Peitoril) ───────────────────────
+// Returns total linear meters = sum of piece comprimentos × lados
+function _calcAcbAutoMl(amb,lados){
+  if(!lados)return 0;
+  var totalMl=0;
+  (amb.pecas||[]).forEach(function(p){
+    if(p.w){totalMl+=(p.w/100)*(p.q||1);}
+  });
+  return totalMl*lados;
+}
+
+// Radio-toggle for acb_auto groups: ensures only one key active per group
+function togAcbAuto(ambId,k){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(!amb.svState)amb.svState={};
+  var sv=amb.svState;
+  var g=SV_DEFS[amb.tipo]||SV_DEFS.Cozinha;
+  // Find which group this key belongs to
+  g.forEach(function(grp){
+    var match=grp.its.find(function(it){return it.k===k;});
+    if(!match)return;
+    if(match.u!=='acb_auto')return;
+    // Deactivate all in this acb_auto group
+    grp.its.forEach(function(it){delete sv[it.k];});
+    // Activate selected (if not already the first/default = sem acabamento that means lados=0)
+    sv[k]={lados:match.lados||0};
+  });
+  renderAmbientes();
+}
+
+function buildSVHtml(amb){
+  var g=SV_DEFS[amb.tipo]||SV_DEFS.Cozinha;
+  var sv=amb.svState||{};
+  var h='';
+  g.forEach(function(grp){
+    h+='<div class="svblk"><div class="svhd">'+grp.g+'</div>';
+    grp.its.forEach(function(it){
+      var pr=getPr(it.k);
+      var isOn=!!sv[it.k];
+      var hint=it.u==='sf'?'R$ '+pr+'/ml + m² pedra':it.u==='ml'?'R$ '+pr+'/ml':it.u==='km'?'R$ '+pr+'/km':it.u==='cuba'?'Selecionar modelo':it.u==='livre'?'Valor livre':'R$ '+pr;
+      h+='<div class="svrow'+(isOn?' on':'')+'" data-sv="'+it.k+'" data-amb="'+amb.id+'">';
+      h+='<div class="svchk">✓</div><div class="svlbl">'+it.l+'<span class="svph">'+hint+'</span></div></div>';
+      if(it.u==='sf'&&isOn){
+        var sfv=sv[it.k]||{};
+        h+='<div class="sfw on" id="sf-'+amb.id+'-'+it.k+'">';
+        h+='<div class="sfl">'+it.l+'</div><div class="sfr">';
+        h+='<div class="sf"><span>Comprimento (ml)</span><input type="number" id="sw-'+amb.id+'-'+it.k+'" placeholder="2.50" step="0.01" value="'+(sfv.ml||'')+'" oninput="updSVAmb('+amb.id+',\''+it.k+'\',\'ml\',+this.value);calcSFAmb('+amb.id+',\''+it.k+'\')" onclick="event.stopPropagation()"></div>';
+        h+='<div class="sfx">×</div>';
+        h+='<div class="sf"><span>Altura (cm)</span><input type="number" id="sh-'+amb.id+'-'+it.k+'" placeholder="6" step="0.5" value="'+(sfv.altCm||'')+'" oninput="updSVAmb('+amb.id+',\''+it.k+'\',\'altCm\',+this.value);calcSFAmb('+amb.id+',\''+it.k+'\')" onclick="event.stopPropagation()"></div>';
+        h+='<div class="sf"><span>Qtd</span><input type="number" id="sq-'+amb.id+'-'+it.k+'" value="'+(sfv.q||1)+'" min="1" style="width:48px;" oninput="updSVAmb('+amb.id+',\''+it.k+'\',\'q\',+this.value||1);calcSFAmb('+amb.id+',\''+it.k+'\')" onclick="event.stopPropagation()"></div>';
+        h+='</div><div class="sfres" id="sfr-'+amb.id+'-'+it.k+'"></div></div>';
+      } else if(it.u==='cuba'&&isOn){
+        var cubaInfo=amb.selCuba?('✓ '+amb.selCuba.nm.trim()+' — R$ '+fm(amb.selCuba.total)):'Toque para escolher';
+        h+='<div class="svcuba on" id="sq-'+amb.id+'-'+it.k+'" onclick="openCubaPickAmb('+amb.id+',\''+it.ctp+'\')" style="cursor:pointer;">'+cubaInfo+'</div>';
+      } else if((it.u==='ml'||it.u==='km'||it.u==='un')&&!it.fx&&isOn){
+        var sv2=sv[it.k]||{};
+        h+='<div class="svxtr on" id="sq-'+amb.id+'-'+it.k+'"><input type="number" id="si-'+amb.id+'-'+it.k+'" placeholder="'+(it.u==='ml'?'metros':'qtd')+'" step="0.1" value="'+(sv2.qty||'')+'" oninput="updSVAmb('+amb.id+',\''+it.k+'\',\'qty\',+this.value)" onclick="event.stopPropagation()"><span class="svunit">'+it.u+'</span></div>';
+      } else if(it.u==='livre'&&isOn){
+        var sv3=sv[it.k]||{};
+        h+='<div class="svxtr on" id="sq-'+amb.id+'-'+it.k+'"><input type="number" id="si-'+amb.id+'-'+it.k+'" placeholder="valor" value="'+(sv3.qty||'')+'" oninput="updSVAmb('+amb.id+',\''+it.k+'\',\'qty\',+this.value)" onclick="event.stopPropagation()"><span class="svunit">reais</span></div>';
+      }
+    });
+    h+='</div>';
+  });
+
+  // ── ACESSÓRIOS DO CATÁLOGO ──
+  var acList=CFG.ac||[];
+  var tiposComAcess=['Cozinha','Banheiro','Lavabo','Outro'];
+  if(acList.length&&tiposComAcess.indexOf(amb.tipo)>=0){
+    if(!amb.acState)amb.acState={};
+    h+='<div class="svblk"><div class="svhd">🔩 Acessórios</div>';
+    acList.forEach(function(a,ai){
+      var acKey='ac_cat_'+a.id;
+      var isOn=!!amb.acState[acKey];
+      var prStr=a.pr>0?'R$ '+a.pr.toLocaleString('pt-BR'):'Consultar';
+      h+='<div class="svrow'+(isOn?' on':'')+'" data-tog-ac="'+acKey+'" data-amb-ac="'+amb.id+'">';
+      h+='<div class="svchk">✓</div>';
+      h+='<div class="svlbl">'+a.nm+'<span class="svph">'+prStr+'</span></div></div>';
+      if(isOn){
+        var qv=amb.acState[acKey]||1;
+        h+='<div class="svxtr on"><input type="number" min="1" value="'+qv+'" style="width:60px;" data-upd-ac="'+acKey+'" data-amb-ac2="'+amb.id+'" oninput="updAcAmb('+amb.id+',\''+acKey+'\',+this.value||1)"><span class="svunit">un</span></div>';
+      }
+    });
+    h+='</div>';
+  }
+
+  return h;
+}
+
+function togSV(k,ambId){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(!amb.svState)amb.svState={};
+  var sv=amb.svState;
+  var g=SV_DEFS[amb.tipo]||SV_DEFS.Cozinha;
+  var it=null;
+  g.forEach(function(grp){grp.its.forEach(function(i){if(i.k===k)it=i;});});
+  if(!it)return;
+  if(sv[k]){
+    delete sv[k];
+    if(it.u==='cuba')amb.selCuba=null;
+  } else {
+    sv[k]={ml:0,altCm:6,q:1,qty:1};
+    if(it.u==='cuba'){openCubaPickAmb(ambId,it.ctp);return;}
+  }
+  renderAmbientes();
+}
+
+function updSVAmb(ambId,k,prop,val){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb||!amb.svState||!amb.svState[k])return;
+  amb.svState[k][prop]=val;
+}
+
+function togAcAmb(ambId,acKey){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(!amb.acState)amb.acState={};
+  if(amb.acState[acKey]){
+    delete amb.acState[acKey];
+  } else {
+    amb.acState[acKey]=1;
+  }
+  renderAmbientes();
+}
+
+function updAcAmb(ambId,acKey,qty){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb||!amb.acState)return;
+  amb.acState[acKey]=qty;
+}
+
+function updTumExtra(ambId,field,val){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  if(!amb.tumExtra)amb.tumExtra={};
+  amb.tumExtra[field]=val;
+}
+
+function calcSFAmb(ambId,k){
+  var amb=ambientes.find(function(a){return a.id===ambId;});
+  if(!amb||!amb.svState||!amb.svState[k])return;
+  var sv=amb.svState[k];
+  var el=document.getElementById('sfr-'+ambId+'-'+k);if(!el)return;
+  var ml=sv.ml||0,altCm=sv.altCm||0,q=sv.q||1;
+  if(ml&&altCm){
+    var m2=ml*(altCm/100)*q;
+    var mat=CFG.stones.find(function(s){return s.id===selMat;});
+    var pv=mat?m2*mat.pr:0;
+    var mo=ml*q*getPr(k);
+    el.innerHTML='<span style="color:var(--grn)">Pedra: '+m2.toFixed(3)+'m² → R$ '+fm(pv)+'</span>  <span style="color:var(--gold2)">M.O.: R$ '+fm(mo)+'</span>';
+  } else {el.textContent='';}
+}
+
+// Cuba picker per ambiente
+var _cubaPickAmbId=null,_cubaPickSvKey2=null;
+function openCubaPickAmb(ambId,tipo){
+  _cubaPickAmbId=ambId;
+  _cubaPickKey=tipo==='coz'?'cuba_coz':'cuba_lav';
+  openCubaPick(tipo,tipo==='coz'?'cuba_coz':'cuba_lav');
+}
+
+// AI per ambiente
+var _aiAmbId=null;
+function abrirAIMd(ambId){
+  _aiAmbId=ambId;
+  var amb=ambientes.find(function(a){return a.id===ambId;});
+  var _aiDesc=document.getElementById('aiDesc');
+  var _aiStatus=document.getElementById('aiStatus');
+  var _aiResultBox=document.getElementById('aiResultBox');
+  var _btnAIAplicar=document.getElementById('btnAIAplicar');
+  if(_aiDesc)_aiDesc.value='';
+  if(_aiStatus){_aiStatus.textContent='Ambiente: '+(amb?amb.tipo:'');_aiStatus.className='ai-status';}
+  if(_aiResultBox)_aiResultBox.style.display='none';
+  if(_btnAIAplicar)_btnAIAplicar.style.display='none';
+  showMd('aiMd');
+}
+
+// ═══ CALCULAR ═══
+function calcular(){
+  var cli=document.getElementById('oCliente').value.trim()||'Cliente';
+  var tel=document.getElementById('oTel').value.trim()||'';
+  var cidade=document.getElementById('oCidade').value.trim()||'';
+  var end=document.getElementById('oEnd').value.trim()||'';
+  var obs=document.getElementById('oObs').value.trim()||'';
+  var mat=CFG.stones.find(function(s){return s.id===selMat;});
+  if(!mat){toast('Selecione o material');return;}
+  if(!ambientes.length){toast('Adicione pelo menos um ambiente');return;}
+
+  var totalM2=0,totalAcT=0;
+  var detHtml='';
+  var txtAmbientes='';
+  var allAcN=[];
+  var allPds=[];
+
+  ambientes.forEach(function(amb,idx){
+    var tipo=amb.tipo;
+    var sv=amb.svState||{};
+    var g=SV_DEFS[tipo]||SV_DEFS.Cozinha;
+    var m2=0,acT=0,acL=[],acN=[],sfPcs=[],pds=[];
+
+    // Peças
+    amb.pecas.forEach(function(p){
+      if(p.w&&p.h){
+        var a=(p.w/100)*(p.h/100)*(p.q||1);
+        m2+=a;
+        pds.push({desc:p.desc||'Peça',w:p.w,h:p.h,q:p.q||1,m2:a});
+        allPds.push({desc:(tipo+': '+(p.desc||'Peça')),w:p.w,h:p.h,q:p.q||1,m2:a});
+      }
+    });
+
+    // Serviços
+    g.forEach(function(grp){grp.its.forEach(function(it){
+      if(!sv[it.k])return;
+      var svd=sv[it.k];
+      // acb_auto: auto-calculated acabamento for Soleira/Peitoril
+      // Cost is embedded in the total — NOT shown separately in PDF/WA
+      if(it.u==='acb_auto'){
+        var acbLados=it.lados||0;
+        if(acbLados>0){
+          var acbMl=_calcAcbAutoMl(amb,acbLados);
+          var acbPr=getPr(it.k);
+          if(acbMl>0&&acbPr>0){acT+=acbMl*acbPr;} // add to cost, invisible in output
+        }
+        return;
+      }
+      if(it.u==='sf'){
+        var ml=svd.ml||0,altCm=svd.altCm||0,q=svd.q||1;
+        if(ml&&altCm){
+          var sfM2=ml*(altCm/100)*q;
+          var sfMo=ml*q*getPr(it.k);
+          m2+=sfM2;acT+=sfMo;
+          acL.push({l:it.l+' '+ml+'ml×'+altCm+'cm',v:sfMo});
+          acN.push(it.l+' ('+ml+'ml, '+sfM2.toFixed(3)+'m²)');
+          sfPcs.push({l:it.l,w:ml,h:altCm,q:q,m2:sfM2,mo:sfMo});
+        }
+        return;
+      }
+      if(it.u==='cuba'){
+        if(amb.selCuba){acT+=amb.selCuba.total;acL.push({l:'Cuba: '+amb.selCuba.nm.trim(),v:amb.selCuba.total});acN.push('Cuba: '+amb.selCuba.nm.trim());}
+        return;
+      }
+      if(it.u==='livre'){var v=svd.qty||0;if(v>0){acT+=v;acL.push({l:it.l,v:v});acN.push(it.l);}return;}
+      if(it.fx===1){var p2=getPr(it.k);if(p2>0){acT+=p2;acL.push({l:it.l,v:p2});acN.push(it.l);}return;}
+      var qty=svd.qty||1;
+      var vv=getPr(it.k)*qty;acT+=vv;acL.push({l:it.l+(qty>1?' ('+qty+it.u+')':''),v:vv});acN.push(it.l);
+    });});
+
+    // Acessórios do catálogo
+    var acState=amb.acState||{};
+    var acList=CFG.ac||[];
+    Object.keys(acState).forEach(function(acKey){
+      var qty=acState[acKey]||1;
+      var acId=acKey.replace('ac_cat_','');
+      var aItem=acList.find(function(x){return x.id===acId;});
+      if(!aItem)return;
+      var val=aItem.pr>0?aItem.pr*qty:0;
+      var label=aItem.nm+(qty>1?' ×'+qty:'');
+      if(val>0){acT+=val;acL.push({l:label,v:val});}
+      acN.push(label);
+    });
+
+    totalM2+=m2;totalAcT+=acT;
+    allAcN=allAcN.concat(acN);
+
+    var pedTamb=m2*mat.pr;
+    var ambLabel=(idx+1)+'º Ambiente — '+tipo;
+    detHtml+='<div style="font-size:.62rem;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:8px 0 4px;">'+ambLabel+'</div>';
+    if(pds.length){
+      pds.forEach(function(p){
+        detHtml+='<div class="rrow"><span class="rk">'+p.desc+' '+p.w+'×'+p.h+'cm'+(p.q>1?' ×'+p.q:'')+'</span><span class="rv">'+p.m2.toFixed(3)+'m²</span></div>';
+      });
+    }
+    if(sfPcs.length){sfPcs.forEach(function(p){
+      detHtml+='<div class="rrow"><span class="rk">'+p.l+' '+p.w+'ml×'+p.h+'cm'+(p.q>1?' ×'+p.q:'')+'</span><span class="rv">'+p.m2.toFixed(3)+'m²</span></div>';
+    });}
+    detHtml+='<div class="rrow"><span class="rk">'+mat.nm+' — '+m2.toFixed(3)+'m²</span><span class="rv" style="color:var(--gold2)">R$ '+fm(pedTamb)+'</span></div>';
+    acL.forEach(function(a){detHtml+='<div class="rrow"><span class="rk">'+a.l+'</span><span class="rv">R$ '+fm(a.v)+'</span></div>';});
+    if(acL.length===0&&m2===0)detHtml+='<div style="font-size:.72rem;color:var(--t4);padding:2px 0;">Nenhuma peça ou serviço neste ambiente</div>';
+
+    // Texto WA por ambiente
+    var pTxt=pds.map(function(p){return '• '+(p.desc||'Peça')+' — '+p.w+'×'+p.h+'cm'+(p.q>1?' ×'+p.q:'');}).join('\n');
+    if(sfPcs.length)pTxt+=(pTxt?'\n':'')+sfPcs.map(function(p){return '• '+p.l+' — '+p.w+'ml×'+p.h+'cm'+(p.q>1?' ×'+p.q:'');}).join('\n');
+    var aTxt=acN.length?acN.map(function(a){return '• '+a;}).join('\n'):'';
+    var tumTxt='';
+    if(amb.tipo==='Túmulo'&&amb.tumExtra){
+      var te=amb.tumExtra;
+      if(te.falecido)tumTxt+='Falecido(a): '+te.falecido+'\n';
+      if(te.cemiterio)tumTxt+='Cemitério: '+te.cemiterio+'\n';
+      if(te.quadra||te.lote)tumTxt+='Local: Quadra '+( te.quadra||'—')+' Lote '+(te.lote||'—')+'\n';
+      if(te.subtipo)tumTxt+='Tipo: '+te.subtipo+'\n';
+    }
+    txtAmbientes+='\n─── '+ambLabel+' ───\n'+(tumTxt||'')+(pTxt||'(sem peças)')+(aTxt?'\nInclusos:\n'+aTxt:'');
+  });
+
+  var pedT=totalM2*mat.pr;
+  var bruto=pedT+totalAcT;
+  var vista=bruto;
+  var parc=vista*1.12;
+  var p8=parc/8,ent=vista/2;
+
+  detHtml+='<div style="border-top:1px solid var(--bd);margin:10px 0 6px;"></div>';
+  detHtml+='<div class="rrow"><span class="rk">Total m² de pedra</span><span class="rv">'+totalM2.toFixed(3)+'m²</span></div>';
+  detHtml+='<div class="rrow"><span class="rk">Parcelado 8×</span><span class="rv" style="color:var(--t3)">R$ '+fm(parc)+' — 8× R$ '+fm(p8)+'</span></div>';
+  detHtml+='<div class="rtot"><span class="k">À Vista</span><span class="v">R$ '+fm(vista)+'</span></div>';
+  document.getElementById('resDetail').innerHTML=detHtml;
+
+  // PAINEL INTERNO
+  var pi='';
+  var dtHP=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  pi+='<div style="background:linear-gradient(135deg,#0d0d18,#12100a);padding:14px 16px;border-bottom:1px solid var(--bd);">';
+  pi+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold3);font-weight:700;">Resumo do Orçamento</div>';
+  pi+='<div style="font-family:Cormorant Garamond,serif;font-size:1.4rem;color:var(--gold2);font-weight:700;margin-top:2px;">'+escH(cli)+'</div>';
+  pi+='<div style="font-size:.72rem;color:var(--t3);margin-top:2px;">'+dtHP+'</div></div>';
+  pi+='<div style="padding:12px 16px;border-bottom:1px solid var(--bd);">';
+  pi+='<div style="font-size:.55rem;letter-spacing:2px;text-transform:uppercase;color:var(--t4);margin-bottom:6px;">Material</div>';
+  pi+='<div style="display:flex;justify-content:space-between;">';
+  pi+='<b style="font-size:.85rem;color:var(--tx);">'+mat.nm+' — '+mat.fin+'</b>';
+  pi+='<b style="color:var(--gold2);">R$ '+fm(mat.pr)+'/m²</b></div>';
+  pi+='<div style="font-size:.72rem;color:var(--t3);margin-top:3px;">Área: '+fm(totalM2)+' m² → Pedra: R$ '+fm(pedT)+'</div></div>';
+  var acbNmP={borda_reta:'Borda Reta',borda_45:'Borda 45°',borda_boleada:'Borda Boleada',borda_chf:'Borda Chanfrada',cant:'Cantoneira',rodape:'Rodapé'};
+  ambientes.forEach(function(ambP){
+    var gP=SV_DEFS[ambP.tipo]||SV_DEFS.Cozinha;
+    var svP=ambP.svState||{};
+    var rowsP='';
+    gP.forEach(function(grpP){grpP.its.forEach(function(itP){
+      if(!svP[itP.k])return;
+      if(itP.u==='acb_auto')return; // absorbed in total, don't show separately
+      var sdP=svP[itP.k];
+      var mlP=sdP.ml||sdP.w||0,hP=sdP.altCm||sdP.h||0,qP=sdP.q||1;
+      var vP=0,dP=itP.l;
+      if(itP.u==='sf'){vP=mlP*qP*getPr(itP.k);dP+=' '+mlP+'ml×'+hP+'cm'+(qP>1?' ×'+qP:'');}
+      else if(itP.u==='sf_slim'||itP.u==='ml_only'){vP=mlP*qP*getPr(itP.k);dP+=' '+mlP+'ml (só MO)';}
+      else if(itP.u==='cuba'){if(ambP.selCuba){vP=ambP.selCuba.total;dP+=': '+ambP.selCuba.nm.trim();}}
+      else if(!itP.fx){vP=(sdP.w||0)*getPr(itP.k);if(sdP.w)dP+=' '+sdP.w+(itP.u==='un'?'un':'ml');}
+      else{vP=getPr(itP.k);}
+      if(vP>0){rowsP+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0d0d10;"><span style="font-size:.75rem;color:var(--t2);">'+dP+'</span><span style="font-size:.75rem;color:var(--gold2);font-weight:600;">R$ '+fm(vP)+'</span></div>';}
+    });});
+    ambP.pecas.forEach(function(pP){
+      if(!pP.acb)return;
+      Object.keys(pP.acb).forEach(function(akP){
+        var mlA=pP.acb[akP].ml||0;if(!mlA)return;
+        var vA=mlA*getPr(akP);
+        rowsP+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #0d0d10;"><span style="font-size:.75rem;color:var(--t2);">'+(acbNmP[akP]||akP)+' '+mlA+'ml ('+escH(pP.desc||'')+')</span><span style="font-size:.75rem;color:var(--gold2);font-weight:600;">R$ '+fm(vA)+'</span></div>';
+      });
+    });
+    if(rowsP){
+      pi+='<div style="padding:10px 16px;border-bottom:1px solid var(--bd);">';
+      pi+='<div style="font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold3);opacity:.7;margin-bottom:6px;">'+ambP.tipo+'</div>'+rowsP+'</div>';
+    }
+  });
+  pi+='<div style="padding:14px 16px;background:var(--s2);">';
+  pi+='<div style="display:flex;justify-content:space-between;margin-bottom:7px;"><span style="font-size:.72rem;color:var(--t3);">Custo Pedra</span><b style="color:var(--grn);">R$ '+fm(pedT)+'</b></div>';
+  pi+='<div style="display:flex;justify-content:space-between;margin-bottom:7px;"><span style="font-size:.72rem;color:var(--t3);">Mão de Obra</span><b style="color:var(--gold2);">R$ '+fm(totalAcT)+'</b></div>';
+  pi+='<div style="border-top:1px solid var(--bd);padding-top:8px;margin-bottom:7px;display:flex;justify-content:space-between;"><span style="font-size:.78rem;font-weight:700;">Total Custo</span><b style="font-family:Cormorant Garamond,serif;font-size:1.1rem;">R$ '+fm(pedT+totalAcT)+'</b></div>';
+  pi+='<div style="border-top:2px solid rgba(201,168,76,.3);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;"><span style="font-size:.72rem;color:var(--gold3);">Valor à Vista (cliente)</span><b style="font-family:Cormorant Garamond,serif;font-size:1.4rem;color:var(--gold2);">R$ '+fm(vista)+'</b></div>';
+  pi+='<div style="display:flex;justify-content:space-between;margin-top:6px;"><span style="font-size:.72rem;color:var(--t4);">Margem estimada</span><b style="color:var(--grn);">R$ '+fm(vista-(pedT+totalAcT))+'</b></div></div>';
+  var piEl=document.getElementById('painelInterno');if(piEl)piEl.innerHTML=pi;
+
+  var txt='HR MARMORES E GRANITOS\nORCAMENTO — '+cli+'\n\nMaterial: '+mat.nm+' ('+mat.fin+')\n'+txtAmbientes+'\n\n• Fabricacao e acabamento completo\n\n==================\nPARCELADO\nR$ '+fm(parc)+' — ate 8x de R$ '+fm(p8)+'\n\nA VISTA\nR$ '+fm(vista)+'\n\nEntrada 50%: R$ '+fm(ent)+'\nEntrega 50%: R$ '+fm(ent)+'\n==================\n'+CFG.emp.nome+'\n'+CFG.emp.tel;
+  if(cidade)txt+='\n'+cidade;
+  document.getElementById('quoteBox').textContent=txt;
+  document.getElementById('resArea').style.display='block';
+  document.getElementById('resArea').scrollIntoView({behavior:'smooth',block:'start'});
+
+  // Salvar snapshot dos ambientes para poder recarregar depois
+  var ambSnap=ambientes.map(function(a){
+    return {tipo:a.tipo,pecas:JSON.parse(JSON.stringify(a.pecas)),selCuba:a.selCuba,svState:JSON.parse(JSON.stringify(a.svState||{})),acState:JSON.parse(JSON.stringify(a.acState||{})),tumExtra:a.tumExtra?JSON.parse(JSON.stringify(a.tumExtra)):null};
+  });
+  var q={id:Date.now(),date:td(),cli:cli,tel:tel,cidade:cidade,end:end,obs:obs,tipo:ambientes.map(function(a){return a.tipo;}).join('+'),mat:mat.nm,matPr:mat.pr,m2:totalM2,pedT:pedT,acT:totalAcT,acN:allAcN,pds:allPds,sfPcs:[],vista:vista,parc:parc,p8:p8,ent:ent,ambSnap:ambSnap};
+  DB.q.unshift(q);DB.sv();pendQ=q;
+}
+function selectQuote(){
+  var el=document.getElementById('quoteBox');
+  if(!el)return;
+  var range=document.createRange();
+  range.selectNodeContents(el);
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+function copiar(){
+  var t=document.getElementById('quoteBox').textContent;
+  // Strategy 1: modern clipboard API
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(t).then(function(){toast('✓ Copiado!');}).catch(function(){_copiarFallback(t);});
+    return;
+  }
+  _copiarFallback(t);
+}
+function _copiarFallback(t){
+  // Strategy 2: execCommand on hidden textarea
+  var ta=document.createElement('textarea');
+  ta.value=t;
+  ta.setAttribute('readonly','');
+  ta.style.cssText='position:fixed;top:-9999px;left:-9999px;font-size:12px;';
+  document.body.appendChild(ta);
+  var isIOS=/ipad|iphone/i.test(navigator.userAgent);
+  var copied=false;
+  if(isIOS){
+    var range=document.createRange();
+    range.selectNodeContents(ta);
+    var sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    ta.setSelectionRange(0,999999);
+  } else {
+    ta.focus();
+    ta.select();
+  }
+  try{
+    copied=document.execCommand('copy');
+  }catch(e){}
+  document.body.removeChild(ta);
+  if(copied){toast('✓ Copiado!');return;}
+  // Strategy 3: show modal with selectable text
+  _copiarModal(t);
+}
+function _copiarModal(t){
+  var ov=document.createElement('div');
+  ov.id='copyOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+  ov.innerHTML='<div style="background:#141418;border-radius:18px 18px 0 0;width:100%;max-width:480px;padding:16px 16px 32px;border-top:1px solid #28282f;">'
+    +'<div style="font-size:.85rem;font-weight:700;color:#C9A84C;margin-bottom:10px;">Selecione e copie o texto</div>'
+    +'<textarea id="copyTa" rows="10" readonly style="width:100%;background:#0e0e12;border:1px solid #28282f;border-radius:10px;color:#F4EFE8;padding:11px 12px;font-size:.76rem;font-family:Outfit,sans-serif;resize:none;outline:none;-webkit-user-select:text;user-select:text;">'+t+'</textarea>'
+    +'<div style="font-size:.68rem;color:#7a7570;margin:8px 0 12px;">Toque na caixa acima → Selecionar tudo → Copiar</div>'
+    +'<button onclick="document.getElementById(\'copyOv\').remove();" style="width:100%;padding:12px;background:#22222a;border:1px solid #28282f;color:#bfb9b0;border-radius:11px;font-size:.84rem;font-weight:600;cursor:pointer;font-family:Outfit,sans-serif;">Fechar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
+  // Auto-select the textarea
+  setTimeout(function(){
+    var ta=document.getElementById('copyTa');
+    if(ta){ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);}
+  },150);
+}
+
+
+function gerarPDF(){
+  if(!pendQ){toast('Calcule um orçamento primeiro');return;}
+  // Load PDF libs on-demand if not already loaded
+  if(typeof html2canvas==='undefined'||typeof window.jspdf==='undefined'){
+    toast('Carregando bibliotecas PDF...');
+    var s1=document.createElement('script');
+    s1.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s1.onload=function(){
+      var s2=document.createElement('script');
+      s2.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s2.onload=function(){gerarPDF();};
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+    return;
+  }
+  if(!pendQ){toast('Calcule um orçamento primeiro');return;}
+  var q=pendQ;
+  var emp=CFG.emp;
+
+  // ── Numeração sequencial a partir de 0 ──
+  var pdfCount=parseInt(localStorage.getItem('hr_pdf_count')||'0',10);
+  var orcNum='ORC-'+String(pdfCount).padStart(4,'0');
+  localStorage.setItem('hr_pdf_count', pdfCount+1);
+
+  var fileName='Orcamento_'+orcNum+'_'+q.cli.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf';
+  var economia=q.parc-q.vista;
+  var mat=CFG.stones.find(function(s){return s.nm===q.mat;})||{pr:q.matPr||0,nm:q.mat||'',fin:''};
+
+  // ── Linhas da tabela ──
+  // Montar linhas da tabela por ambiente
+  var allRowsHtml='';
+  if(q.ambSnap&&q.ambSnap.length){
+    q.ambSnap.forEach(function(snap,idx){
+      var tipo=snap.tipo||'Ambiente';
+      allRowsHtml+='<tr><td colspan="3" style="background:#f0ece3;padding:8px 14px;font-size:8px;'
+        +'letter-spacing:2px;text-transform:uppercase;color:#8a6020;font-weight:900;'
+        +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()
+        +' &nbsp;·&nbsp; <span style="color:#b87020;font-weight:700;">'+mat.nm+(mat.fin?' · '+mat.fin:'')+'</span></td></tr>';
+      var acabamento=mat.fin||'';
+      (snap.pecas||[]).forEach(function(p,i){
+        if(!p.w||!p.h)return;
+        var bg=i%2===0?'#fff':'#faf6ef';
+        allRowsHtml+='<tr>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b>×'+p.q+'</b>':'')+'</td>'
+          +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabamento+'</td>'
+          +'</tr>';
+      });
+      // Saihas/frontões do svState
+      var g=SV_DEFS[tipo]||SV_DEFS.Cozinha;
+      var sv=snap.svState||{};
+      g.forEach(function(grp){grp.its.forEach(function(it){
+        if(!sv[it.k]||it.u!=='sf')return;
+        var svd=sv[it.k];
+        var ml=svd.ml||0,alt=svd.altCm||0,qq=svd.q||1;
+        if(!ml||!alt)return;
+        allRowsHtml+='<tr>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#446;">'+it.l+'</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#777;">'+ml+'ml × '+alt+'cm'+(qq>1?' <b>×'+qq+'</b>':'')+'</td>'
+          +'<td style="padding:9px 14px;background:#f5f9ff;border-bottom:1px solid #e0e8f0;font-size:11.5px;color:#bbb;">—</td>'
+          +'</tr>';
+      });});
+    });
+  } else {
+    var acabFallback=mat.fin||'';
+    (q.pds||[]).forEach(function(p,i){
+      var bg=i%2===0?'#fff':'#faf6ef';
+      allRowsHtml+='<tr>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;">'+(p.desc||'Peça')+'</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#777;">'+p.w+' × '+p.h+' cm'+(p.q>1?' ×'+p.q:'')+'</td>'
+        +'<td style="padding:9px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#555;">'+acabFallback+'</td>'
+        +'</tr>';
+    });
+  }
+
+  // Serviços
+  var svcsHtml=(q.acN&&q.acN.length?q.acN:[]).concat(['Fabricação e acabamento completo']).map(function(a){
+    return '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
+      +'<span style="color:#C9A84C;font-weight:900;font-size:11px;flex-shrink:0;">✓</span>'
+      +'<span style="font-size:11.5px;color:#333;line-height:1.4;">'+a+'</span>'
+      +'</div>';
+  }).join('');
+
+
+  var svcs=(q.acN&&q.acN.length)?q.acN.map(function(a){
+    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
+      +'<span style="color:#C9A84C;font-weight:900;font-size:11px;margin-top:1px;flex-shrink:0;">&#10003;</span>'
+      +'<span style="font-size:12px;color:#333;line-height:1.4;">'+a+'</span>'
+      +'</div>';
+  }).join(''):'';
+
+  var clienteInfo='';
+  if(q.tel)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#128241;</span>'+q.tel+'</div>';
+  if(q.cidade)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#128205;</span>'+q.cidade+'</div>';
+  if(q.end)clienteInfo+='<div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#555;"><span style="color:#C9A84C;">&#127968;</span>'+q.end+'</div>';
+  var obsBox=q.obs?'<div style="background:#fffbf0;border-left:4px solid #C9A84C;padding:10px 14px;margin-bottom:18px;font-size:11.5px;color:#555;border-radius:0 8px 8px 0;line-height:1.65;"><strong style="color:#7a4e00;">Observacoes:</strong> '+q.obs+'</div>':'';
+
+  // sec header helper
+  function sh(t){return '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;"><span style="font-size:7.5px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:900;">'+t+'</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.4),transparent);"></div></div>';}
+
+  var recHtml=''
+  // ── WRAPPER
+  +'<div id="pdfReceipt" style="width:700px;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#1a1a1a;">'
+
+  // ── TOP STRIPE
+  +'<div style="height:6px;background:linear-gradient(90deg,#5a3a06 0%,#C9A84C 35%,#E8C96A 50%,#C9A84C 65%,#5a3a06 100%);"></div>'
+
+  // ── HEADER
+  +'<div style="background:#0f0c00;padding:28px 38px 22px;display:flex;justify-content:space-between;align-items:flex-start;gap:20px;">'
+    // brand left
+    +'<div style="display:flex;flex-direction:column;gap:6px;">'
+      +'<div style="font-size:26px;font-weight:900;color:#C9A84C;letter-spacing:-0.5px;line-height:1;">'+emp.nome+'</div>'
+      +'<div style="font-size:8.5px;letter-spacing:3.5px;text-transform:uppercase;color:rgba(201,168,76,0.45);">Marmore &middot; Granito &middot; Quartzito</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,0.22);font-style:italic;margin-top:2px;">Qualidade, Precisao e Acabamento Profissional</div>'
+    +'</div>'
+    // info right
+    +'<div style="text-align:right;display:flex;flex-direction:column;gap:3px;">'
+      +'<div style="font-size:10.5px;color:rgba(201,168,76,0.9);font-weight:700;">'+emp.end+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+emp.cidade+'</div>'
+      +'<div style="font-size:11px;color:rgba(201,168,76,0.9);font-weight:700;margin-top:3px;">'+emp.tel+'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+emp.ig+'</div>'
+      +'<div style="font-size:8.5px;color:rgba(255,255,255,0.18);margin-top:3px;">CNPJ: '+emp.cnpj+'</div>'
+    +'</div>'
+  +'</div>'
+
+  // ── BADGE BAR
+  +'<div style="background:#f7f2e8;border-bottom:3px solid #C9A84C;padding:11px 38px;display:flex;justify-content:space-between;align-items:center;">'
+    +'<div style="display:flex;align-items:center;gap:12px;">'
+      +'<div style="background:#0f0c00;color:#C9A84C;font-size:8px;font-weight:900;padding:6px 16px;border-radius:30px;letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(201,168,76,0.5);">+ ORCAMENTO +</div>'
+      +'<div style="background:#C9A84C;color:#000;font-size:9px;font-weight:900;padding:4px 10px;border-radius:5px;letter-spacing:1px;">'+orcNum+'</div>'
+    +'</div>'
+    +'<div style="text-align:right;">'
+      +'<div style="font-size:10px;color:#888;"><strong style="color:#5a3800;">EMISSAO:</strong> '+fd(q.date)+'</div>'
+      +'<div style="font-size:9.5px;color:#aaa;">Validade: 7 dias</div>'
+    +'</div>'
+  +'</div>'
+
+  // ── BODY
+  +'<div style="padding:24px 38px 20px;">'
+
+    // CLIENTE
+    +sh('Cliente')
+    +'<div style="display:flex;gap:12px;margin-bottom:20px;align-items:stretch;">'
+      +'<div style="flex:1;background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:15px 18px;">'
+        +'<div style="font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:#c0a860;margin-bottom:5px;font-weight:900;">NOME DO CLIENTE</div>'
+        +'<div style="font-size:21px;font-weight:900;color:#1a1a1a;line-height:1;margin-bottom:8px;">'+q.cli+'</div>'
+        +(clienteInfo?'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;">'+clienteInfo+'</div>':'')
+      +'</div>'
+      +'<div style="background:#0f0c00;border:1px solid rgba(201,168,76,0.45);border-radius:10px;padding:14px 18px;text-align:center;display:flex;flex-direction:column;justify-content:center;min-width:110px;">'
+        +'<div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.5);margin-bottom:6px;font-weight:900;">PROJETO</div>'
+        +'<div style="font-size:16px;font-weight:900;color:#C9A84C;line-height:1.2;">'+q.tipo+'</div>'
+      +'</div>'
+    +'</div>'
+    +obsBox
+
+    // MATERIAL E MEDIDAS
+    +sh('Material e Medidas')
+    +'<div style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:20px;">'
+      +'<table style="width:100%;border-collapse:collapse;">'
+        +'<thead>'
+          +'<tr style="background:#0f0c00;">'
+            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">PECA / DESCRICAO</th>'
+            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">MEDIDAS</th>'
+            +'<th style="padding:10px 13px;text-align:left;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">ACABAMENTO</th>'
+          +'</tr>'
+        +'</thead>'
+        +'<tbody>'
+          +allRowsHtml
+        +'</tbody>'
+      +'</table>'
+    +'</div>'
+
+    // INCLUSO
+    +(svcs?sh('Incluso no Projeto')
+    +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:14px 18px;margin-bottom:20px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">'
+        +svcs
+        +'<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
+          +'<span style="color:#C9A84C;font-weight:900;font-size:11px;margin-top:1px;flex-shrink:0;">&#10003;</span>'
+          +'<span style="font-size:12px;color:#333;line-height:1.4;">Fabricacao e acabamento completo</span>'
+        +'</div>'
+      +'</div>'
+    +'</div>':'')
+
+    // VALORES & CONDIÇÕES
+    +sh('Valores e Condicoes de Pagamento')
+
+    // ── CARD À VISTA ──
+    +'<div style="border:2px solid #C9A84C;border-radius:10px;overflow:hidden;box-shadow:0 3px 16px rgba(201,168,76,0.15);margin-bottom:10px;">'
+      +'<div style="background:#0f0c00;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;">'
+        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;font-weight:900;">&#9733; A VISTA &mdash; MELHOR OPCAO</span>'
+        +'<span style="background:rgba(201,168,76,0.18);border:1px solid rgba(201,168,76,0.4);color:#C9A84C;font-size:8px;font-weight:900;padding:2px 10px;border-radius:20px;">Economia R$ '+fm(economia)+'</span>'
+      +'</div>'
+      +'<div style="padding:14px 18px;background:#fff;">'
+        +'<div style="font-size:9px;color:#a08040;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL À VISTA</div>'
+        +'<div style="font-size:34px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.vista)+'</div>'
+        +'<div style="font-size:11px;color:#a06020;">Valor final sem juros</div>'
+      +'</div>'
+    +'</div>'
+
+    // ── PARCELADO ──
+    +'<div style="border:1px solid #ddd5c5;border-radius:10px;overflow:hidden;margin-bottom:10px;">'
+      +'<div style="background:#f5f1e8;padding:8px 18px;">'
+        +'<span style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-weight:900;">PARCELADO</span>'
+      +'</div>'
+      +'<div style="padding:12px 18px;background:#faf8f4;">'
+        +'<div style="font-size:9px;color:#aaa;font-weight:700;letter-spacing:1px;margin-bottom:3px;">VALOR TOTAL PARCELADO</div>'
+        +'<div style="font-size:26px;font-weight:900;color:#aaa;line-height:1;margin-bottom:3px;">R$ '+fm(q.parc)+'</div>'
+        +'<div style="font-size:11px;color:#bbb;">Em até 8× de R$ '+fm(q.p8)+'</div>'
+      +'</div>'
+    +'</div>'
+
+    // ── ENTRADA + ENTREGA ──
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">'
+      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
+        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">ENTRADA &mdash; 50%</div>'
+        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:10px;color:#999;">Na assinatura / medicao</div>'
+      +'</div>'
+      +'<div style="background:#fdfaf3;border:1px solid #e8dfc4;border-radius:10px;padding:12px 16px;">'
+        +'<div style="font-size:7.5px;letter-spacing:2px;text-transform:uppercase;color:#c0a860;margin-bottom:4px;font-weight:900;">NA ENTREGA &mdash; 50%</div>'
+        +'<div style="font-size:22px;font-weight:900;color:#7a4400;line-height:1;margin-bottom:3px;">R$ '+fm(q.ent)+'</div>'
+        +'<div style="font-size:10px;color:#999;">Na entrega / instalacao</div>'
+      +'</div>'
+    +'</div>'
+
+  +'</div>'
+
+  // ── FOOTER
+  +'<div style="background:#0f0c00;padding:18px 38px;display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:4px;">'
+    +'<div>'
+      +'<div style="font-size:14px;font-weight:900;color:#C9A84C;line-height:1;margin-bottom:4px;">'+emp.nome+'</div>'
+      +'<div style="font-size:9.5px;color:rgba(201,168,76,0.4);">'+emp.end+' &mdash; '+emp.cidade+'</div>'
+    +'</div>'
+    +'<div style="text-align:right;line-height:1.9;">'
+      +'<div style="font-size:10.5px;color:rgba(201,168,76,0.85);font-weight:700;">'+emp.tel+'</div>'
+      +'<div style="font-size:9.5px;color:rgba(201,168,76,0.4);">'+emp.ig+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,0.15);">CNPJ: '+emp.cnpj+'</div>'
+    +'</div>'
+  +'</div>'
+  +'<div style="height:5px;background:linear-gradient(90deg,#5a3a06 0%,#C9A84C 35%,#E8C96A 50%,#C9A84C 65%,#5a3a06 100%);"></div>'
+  +'</div>';
+
+
+  // ── Overlay ──
+
+
+  // ── Overlay ──
+  var ov=document.createElement('div');
+  ov.id='pdfOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9999;display:flex;flex-direction:column;';
+
+  var barEl=document.createElement('div');
+  barEl.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 13px;background:#0f0c00;border-bottom:1px solid rgba(201,168,76,.55);flex-shrink:0;flex-wrap:wrap;';
+  barEl.innerHTML=''
+    +'<span style="flex:1;font-size:.75rem;color:#C9A84C;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">&#128196; '+orcNum+' &mdash; '+q.cli+'</span>'
+    +'<button id="pdfBtnClose" style="background:transparent;border:1px solid rgba(201,168,76,.35);color:rgba(201,168,76,.7);padding:7px 11px;border-radius:8px;font-size:.72rem;cursor:pointer;font-family:Outfit,sans-serif;">&#x2715;</button>'
+    +'<button id="pdfBtnDown" disabled style="background:#1e1800;border:1px solid rgba(201,168,76,.2);color:rgba(201,168,76,.35);padding:7px 13px;border-radius:8px;font-size:.72rem;cursor:pointer;font-family:Outfit,sans-serif;white-space:nowrap;">&#9203; Gerando...</button>'
+    +(navigator.share?'<button id="pdfBtnShare" disabled style="background:#1e1800;border:1px solid rgba(201,168,76,.2);color:rgba(201,168,76,.35);padding:7px 13px;border-radius:8px;font-size:.72rem;cursor:pointer;font-family:Outfit,sans-serif;white-space:nowrap;">&#8599; Compartilhar</button>':'')
+    +'<button id="pdfBtnPrint" style="background:#C9A84C;border:none;color:#000;padding:7px 13px;border-radius:8px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;white-space:nowrap;">&#128424; Imprimir</button>';
+
+  var preview=document.createElement('div');
+  preview.style.cssText='flex:1;overflow-y:auto;background:#444;display:flex;justify-content:center;align-items:flex-start;padding:16px 8px;';
+  preview.innerHTML='<div style="text-align:center;color:#C9A84C;padding:60px 20px;font-family:Outfit,sans-serif;font-size:.85rem;letter-spacing:.5px;">&#9203; Gerando PDF, aguarde...</div>';
+
+  ov.appendChild(barEl);
+  ov.appendChild(preview);
+  document.body.appendChild(ov);
+
+  document.getElementById('pdfBtnClose').onclick=function(){ov.remove();};
+  document.getElementById('pdfBtnPrint').onclick=function(){
+    var w=window.open('','_blank');
+    if(w){
+      w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}body{background:#fff;}</style></head><body>'+recHtml+'<script>window.onload=function(){window.print();};<\/script></body></html>');
+      w.document.close();
+    }
+  };
+
+  // ── Off-screen render ──
+  var offscreen=document.createElement('div');
+  offscreen.style.cssText='position:fixed;left:-9999px;top:0;width:700px;background:#fff;z-index:-1;';
+  offscreen.innerHTML=recHtml;
+  document.body.appendChild(offscreen);
+
+  setTimeout(function(){
+    html2canvas(offscreen.querySelector('#pdfReceipt'),{
+      scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,width:700,windowWidth:700
+    }).then(function(canvas){
+      document.body.removeChild(offscreen);
+      var jsPDF=window.jspdf.jsPDF;
+      var pageW=595.28;
+      var pageH=pageW*(canvas.height/canvas.width);
+      var pdf=new jsPDF({orientation:'portrait',unit:'pt',format:[pageW,pageH]});
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.96),'JPEG',0,0,pageW,pageH);
+      var pdfBlob=pdf.output('blob');
+
+      var img=document.createElement('img');
+      img.src=canvas.toDataURL('image/jpeg',0.88);
+      img.style.cssText='width:100%;max-width:700px;display:block;box-shadow:0 4px 32px rgba(0,0,0,.6);';
+      preview.innerHTML='';preview.appendChild(img);
+
+      function enableBtn(id,label,cb){
+        var b=document.getElementById(id);if(!b)return;
+        b.innerHTML=label;b.disabled=false;
+        b.style.color='#C9A84C';b.style.borderColor='rgba(201,168,76,.55)';b.style.background='#1e1800';
+        b.onclick=cb;
+      }
+
+      enableBtn('pdfBtnDown','&#11015; Salvar PDF',function(){
+        var url=URL.createObjectURL(pdfBlob);
+        var a=document.createElement('a');
+        a.href=url;a.download=fileName;
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        setTimeout(function(){URL.revokeObjectURL(url);},30000);
+        toast('PDF salvo: '+fileName);
+      });
+
+      if(navigator.share){
+        enableBtn('pdfBtnShare','&#8599; Compartilhar',function(){
+          var pdfFile=new File([pdfBlob],fileName,{type:'application/pdf'});
+          var sd={title:'Orcamento '+orcNum+' — '+q.cli,text:emp.nome+'\nR$ '+fm(q.vista)+' a vista'};
+          if(navigator.canShare&&navigator.canShare({files:[pdfFile]}))sd.files=[pdfFile];
+          navigator.share(sd).catch(function(){});
+        });
+      }
+
+      toast('✓ PDF pronto — '+orcNum);
+    }).catch(function(){
+      if(document.body.contains(offscreen))document.body.removeChild(offscreen);
+      preview.innerHTML='<div style="text-align:center;color:#c94444;padding:40px 20px;font-family:Outfit,sans-serif;font-size:.82rem;">Erro ao gerar. Use &#128424; Imprimir.</div>';
+    });
+  },200);
+}
+function salvarAgenda(){
+  if(!pendQ)return;
+  var last=lastEnd();
+  var _dm=document.getElementById('diasMsg');
+  var _di=document.getElementById('diasIn');
+  var _dp=document.getElementById('diasPrev');
+  if(_dm)_dm.textContent=(last?'Agenda ocupada até '+fd(last)+'. ':'')+'Quantos dias para entregar o serviço de '+pendQ.cli+'?';
+  if(_di)_di.value='';
+  if(_dp)_dp.classList.remove('on');
+  showMd('diasMd');
+}
+function prevDias(){
+  var d=+document.getElementById('diasIn').value;
+  var p=document.getElementById('diasPrev');
+  if(!p)return;
+  if(!d){p.classList.remove('on');return;}
+  var s=lastEnd()||td();
+  p.textContent='Início: '+fd(s)+'\nEntrega prevista: '+fd(addD(s,d));
+  p.classList.add('on');
+}
+function confirmarAgenda(){var d=+document.getElementById('diasIn').value;if(!d||!pendQ){toast('Informe os dias');return;}var s=lastEnd()||td(),end=addD(s,d),q=pendQ;var job={id:Date.now(),cli:q.cli,desc:q.tipo+' — '+q.mat,material:q.mat||'',tipo:q.tipo||'Serviço',start:s,end:end,value:q.vista,pago:0,obs:'',done:false,status:'agendado'};DB.j.unshift(job);DB.sv();closeAll();updUrgDot();toast('✓ '+q.cli+' agendado para '+fd(end));}
+
+// ══════════════════════════════════════════════════════════
+// AGENDA — SISTEMA DE STATUS OPERACIONAL
+// 🔵 agendado | 🟡 producao | 🟢 instalado | ⚫ finalizado | 🔴 atrasado
+// ══════════════════════════════════════════════════════════
+
+var JOB_STATUS = {
+  agendado:  { emoji:'🔵', label:'Agendado',  cls:'js-agendado'  },
+  producao:  { emoji:'🟡', label:'Produção',  cls:'js-producao'  },
+  instalado: { emoji:'🟢', label:'Instalado', cls:'js-instalado' },
+  finalizado:{ emoji:'⚫', label:'Finalizado', cls:'js-finalizado'},
+  atrasado:  { emoji:'🔴', label:'Atrasado',  cls:'js-atrasado'  }
+};
+
+function jStatus(j) {
+  if (j.status === 'finalizado') return 'finalizado';
+  if (j.status === 'instalado')  return 'instalado';
+  if (j.done) return 'finalizado';
+  var d = j.end ? dDiff(j.end) : null;
+  if (d !== null && d < 0) return 'atrasado';
+  return j.status || 'agendado';
+}
+
+function openJobModal(id){
+  editJobId=id;
+  var el=document.getElementById('jobMdTitle');
+  if(el) el.textContent=id?'Editar Serviço':'Novo Serviço';
+  if(id){
+    var j=DB.j.find(function(x){return x.id===id;});
+    if(!j)return;
+    document.getElementById('jCli').value=j.cli||'';
+    document.getElementById('jMat').value=j.material||j.mat||'';
+    document.getElementById('jTipo').value=j.tipo||j.desc||'';
+    document.getElementById('jStart').value=j.start||td();
+    document.getElementById('jDias').value='';
+    document.getElementById('jObs').value=j.obs||'';
+    var jSt=document.getElementById('jStatusSel');
+    if(jSt)jSt.value=jStatus(j);
+  } else {
+    ['jCli','jMat','jTipo','jObs'].forEach(function(i){var el=document.getElementById(i);if(el)el.value='';});
+    document.getElementById('jStart').value=td();
+    document.getElementById('jDias').value='';
+    var jSt=document.getElementById('jStatusSel');
+    if(jSt)jSt.value='agendado';
+  }
+  var _jobDp=document.getElementById('jobDp');
+  if(_jobDp)_jobDp.classList.remove('on');
+  showMd('jobMd');
+}
+function prevJobDias(){
+  var d=+document.getElementById('jDias').value;
+  var s=document.getElementById('jStart').value;
+  var p=document.getElementById('jobDp');
+  if(!p)return;
+  if(!d||!s){p.classList.remove('on');return;}
+  p.textContent='Entrega: '+fd(addD(s,d));
+  p.classList.add('on');
+}
+function saveJob(){
+  var cli=(document.getElementById('jCli').value||'').trim();
+  var mat=(document.getElementById('jMat').value||'').trim();
+  var tipo=(document.getElementById('jTipo').value||'').trim();
+  if(!cli){toast('Preencha o cliente');return;}
+  var s=document.getElementById('jStart').value,d=+document.getElementById('jDias').value||0;
+  var end=d?addD(s,d):'';
+  var obs=(document.getElementById('jObs').value||'').trim();
+  var statusEl=document.getElementById('jStatusSel');
+  var status=statusEl?statusEl.value:'agendado';
+  var desc=tipo+(mat?' — '+mat:'');
+  if(editJobId){
+    var j=DB.j.find(function(x){return x.id===editJobId;});
+    if(j){j.cli=cli;j.material=mat;j.mat=mat;j.tipo=tipo;j.desc=desc;j.start=s;j.end=end;j.obs=obs;j.status=status;j.done=(status==='finalizado');DB.sv();}
+  } else {
+    DB.j.unshift({id:Date.now(),cli:cli,material:mat,mat:mat,tipo:tipo,desc:desc,start:s,end:end,value:0,pago:0,obs:obs,done:false,status:status});DB.sv();
+  }
+  renderAg();updUrgDot();closeAll();toast('✓ Salvo!');
+}
+
+function editJob(id){openJobModal(id);}
+
+function togJob(id){
+  var j=DB.j.find(function(x){return x.id===id;});
+  if(!j)return;
+  j.done=!j.done;
+  j.status=j.done?'finalizado':'agendado';
+  DB.sv();renderAg();updUrgDot();
+  if(j.done){
+    toast('✅ '+j.cli+' finalizado!');
+    var r=j.value-(j.pago||0);
+    if(r>0)setTimeout(function(){showCB(j.cli+' concluído! Recebeu R$ '+fm(r)+' da entrega?',function(){addTr('in','Entrega — '+j.cli,r);j.pago=j.value;DB.sv();renderAg();hideCB();toast('✓ Registrado!');},function(){hideCB();});},400);
+  }
+}
+
+function pagRest(id){
+  var j=DB.j.find(function(x){return x.id===id;});
+  if(!j)return;
+  var r=j.value-(j.pago||0);
+  showCB('Registrar R$ '+fm(r)+' do '+j.cli+'?',function(){addTr('in','Pagamento — '+j.cli,r);j.pago=j.value;DB.sv();renderAg();hideCB();toast('✓ Registrado!');},function(){hideCB();});
+}
+
+function delJob(id){
+  if(!confirm('Remover serviço?'))return;
+  DB.j=DB.j.filter(function(j){return j.id!==id;});
+  DB.sv();renderAg();updUrgDot();
+}
+
+function updUrgDot(){
+  var u=DB.j.filter(function(j){var s=jStatus(j);return s==='atrasado';}).length;
+  var _dot=document.getElementById('urgDot');
+  if(_dot)_dot.classList.toggle('on',u>0);
+}
+
+// ══════════════════════════════════════════════════════════
+// RENDER AGENDA — Cards limpos sem info financeira
+// ══════════════════════════════════════════════════════════
+function renderAg(){
+  var groups = {atrasado:[],producao:[],agendado:[],instalado:[],finalizado:[]};
+  DB.j.forEach(function(j){
+    var s=jStatus(j);
+    if(!groups[s])groups[s]=[];
+    groups[s].push(j);
+  });
+  var order=['atrasado','producao','agendado','instalado','finalizado'];
+  var labels={atrasado:'🔴 Atrasados',producao:'🟡 Em Produção',agendado:'🔵 Agendados',instalado:'🟢 Instalados',finalizado:'⚫ Finalizados'};
+  var h='';
+  order.forEach(function(s){
+    var items=groups[s]||[];
+    if(!items.length)return;
+    var isFin=(s==='finalizado');
+    h+='<div class="ag-sec-lbl ag-sec-'+s+'">'+labels[s]+'<span class="ag-sec-count">'+items.length+'</span></div>';
+    var show=isFin?items.slice(0,5):items;
+    show.forEach(function(j){h+=jCard(j);});
+    if(isFin&&items.length>5)h+='<div class="ag-more">+mais '+(items.length-5)+' finalizados</div>';
+  });
+  if(!DB.j.length)h='<div class="ag-empty"><div style="font-size:2.2rem;margin-bottom:9px;">📅</div>Nenhum serviço ainda.<br><span style="font-size:.72rem;color:var(--t4);">Use o Fechamento de Venda ou + Novo Serviço</span></div>';
+  var el=document.getElementById('agList');
+  if(el)el.innerHTML=h;
+}
+
+function jCard(j){
+  var s=jStatus(j);
+  var si=JOB_STATUS[s]||JOB_STATUS.agendado;
+  var d=j.end?dDiff(j.end):null;
+  var prazoTxt='';
+  if(d!==null){
+    if(d<0) prazoTxt='<span class="jc-prazo atrasado">'+Math.abs(d)+'d em atraso</span>';
+    else if(d===0) prazoTxt='<span class="jc-prazo atrasado">Entrega hoje!</span>';
+    else prazoTxt='<span class="jc-prazo">'+d+'d para entrega</span>';
+  }
+  var mat=j.material||j.mat||'';
+  var tipo=j.tipo||j.desc||'';
+  return '<div class="jcard2 jcard2-'+s+'" data-openjob="'+j.id+'">'+
+    '<div class="jc-status-bar">'+
+    '<span class="jc-badge jc-badge-'+s+'">'+si.emoji+' '+si.label+'</span>'+
+    (prazoTxt||'')+
+    '</div>'+
+    '<div class="jc-cli">'+j.cli+'</div>'+
+    (mat?'<div class="jc-row"><span class="jc-lbl">Material</span><span class="jc-val">'+mat+'</span></div>':'')+
+    (tipo?'<div class="jc-row"><span class="jc-lbl">Serviço</span><span class="jc-val">'+tipo+'</span></div>':'')+
+    '<div class="jc-dates">'+
+    (j.start?'<span>📅 '+fd(j.start)+'</span>':'')+
+    (j.end?'<span>⏰ '+fd(j.end)+'</span>':'')+
+    '</div>'+
+    '</div>';
+}
+
+// ══════════════════════════════════════════════════════════
+// MODAL DETALHE DO SERVIÇO
+// ══════════════════════════════════════════════════════════
+var _detailJobId = null;
+var _detailTab   = 'financeiro';
+
+function openJobDetail(id){
+  _detailJobId=id;
+  _detailTab='financeiro';
+  renderJobDetail();
+  showMd('jobDetailMd');
+}
+
+function closeJobDetail(){
+  var el=document.getElementById('jobDetailMd');
+  if(el)el.classList.remove('on');
+}
+
+function detailTab(tab){
+  _detailTab=tab;
+  renderJobDetail();
+}
+
+function renderJobDetail(){
+  var j=DB.j.find(function(x){return x.id===_detailJobId;});
+  if(!j)return;
+  var s=jStatus(j);
+  var si=JOB_STATUS[s]||JOB_STATUS.agendado;
+
+  // Header
+  var hdr=document.getElementById('jdHdr');
+  if(hdr){
+    hdr.innerHTML='<div class="jd-cli">'+j.cli+'</div>'+
+      '<span class="jc-badge jc-badge-'+s+'">'+si.emoji+' '+si.label+'</span>';
+  }
+
+  // Tabs
+  document.querySelectorAll('.jd-tab').forEach(function(el){
+    el.classList.toggle('on',el.dataset.dtab===_detailTab);
+  });
+
+  // Body
+  var body=document.getElementById('jdBody');
+  if(!body)return;
+  if(_detailTab==='financeiro') body.innerHTML=_jdFinanceiro(j);
+  else if(_detailTab==='parcelas') body.innerHTML=_jdParcelas(j);
+  else if(_detailTab==='status') body.innerHTML=_jdStatus(j);
+  else if(_detailTab==='obs') body.innerHTML=_jdObs(j);
+  else body.innerHTML='<div class="jd-placeholder">Em breve</div>';
+}
+
+function _jdFinanceiro(j){
+  var rest=j.value-(j.pago||0);
+  var h='<div class="jd-fin-grid">';
+  h+='<div class="jd-fin-item"><div class="jd-fin-lbl">Valor Total</div><div class="jd-fin-val gold">R$ '+fm(j.value||0)+'</div></div>';
+  h+='<div class="jd-fin-item"><div class="jd-fin-lbl">Entrada Paga</div><div class="jd-fin-val grn">R$ '+fm(j.pago||0)+'</div></div>';
+  if(rest>0)h+='<div class="jd-fin-item"><div class="jd-fin-lbl">A Receber</div><div class="jd-fin-val red">R$ '+fm(rest)+'</div></div>';
+  if(j.parc&&j.parc>1)h+='<div class="jd-fin-item"><div class="jd-fin-lbl">Parcelas</div><div class="jd-fin-val">'+j.parc+'x</div></div>';
+  if(j.fpag)h+='<div class="jd-fin-item"><div class="jd-fin-lbl">Forma Pgto</div><div class="jd-fin-val">'+j.fpag+'</div></div>';
+  h+='</div>';
+  if(rest>0){
+    h+='<button class="btn btn-g jd-receber-btn" data-pagrest="'+j.id+'">✅ Registrar recebimento</button>';
+  }
+  if(j.value&&j.value===j.pago){
+    h+='<div class="jd-pago-ok">✅ Pagamento integral recebido</div>';
+  }
+  return h;
+}
+
+function _jdParcelas(j){
+  var parcelas=DB.t.filter(function(t){return t.qid&&j.qid&&t.qid===j.qid;});
+  if(!parcelas.length)return '<div class="jd-placeholder">Nenhuma parcela registrada</div>';
+  var h='<div class="jd-parc-list">';
+  parcelas.forEach(function(t){
+    var isAtras=t.type==='pend'&&t.date&&t.date<td();
+    h+='<div class="jd-parc-row'+(isAtras?' jd-parc-atras':'')+'">'+
+      '<div class="jd-parc-desc">'+t.desc+'</div>'+
+      '<div class="jd-parc-info">'+
+      '<span class="jd-parc-dt">'+(t.date?fd(t.date):'')+'</span>'+
+      '<span class="jd-parc-val '+(t.type==='in'?'grn':isAtras?'red':'yel')+'">R$ '+fm(t.value||0)+'</span>'+
+      (isAtras?'<span class="fin-tag-atras">ATRASADO</span>':'')+
+      (t.type==='pend'?'<button class="jd-rec-btn" data-recpend="'+t.id+'">✓</button>':'')+
+      '</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function _jdStatus(j){
+  var s=jStatus(j);
+  var order=['agendado','producao','instalado','finalizado'];
+  var h='<div class="jd-status-pick">';
+  order.forEach(function(st){
+    var si=JOB_STATUS[st];
+    h+='<div class="jd-st-opt'+(s===st?' on':'')+'" data-setstatus="'+st+'">'+
+      '<span class="jd-st-em">'+si.emoji+'</span>'+
+      '<span class="jd-st-lbl">'+si.label+'</span>'+
+      '</div>';
+  });
+  h+='</div>';
+  h+='<div style="margin-top:14px;">';
+  h+='<button class="btn btn-sm btn-o" data-editjob="'+j.id+'" style="width:100%;margin-bottom:8px;">✏️ Editar Serviço</button>';
+  h+='<button class="btn btn-sm btn-red" data-deljob="'+j.id+'" style="width:100%;">🗑 Remover</button>';
+  h+='</div>';
+  return h;
+}
+
+function _jdObs(j){
+  var h='<textarea class="jd-obs-area" id="jdObsTxt" rows="5" placeholder="Endereço, observações, detalhes do serviço...">'+escH(j.obs||'')+'</textarea>';
+  h+='<button class="btn btn-g" id="btnSvObs" style="margin-top:8px;" onclick="saveJobObs()">Salvar Obs.</button>';
+  return h;
+}
+
+function saveJobObs(){
+  var j=DB.j.find(function(x){return x.id===_detailJobId;});
+  if(!j)return;
+  var el=document.getElementById('jdObsTxt');
+  if(el){j.obs=el.value.trim();DB.sv();toast('✓ Observação salva!');}
+}
+
+function setJobStatus(id,status){
+  var j=DB.j.find(function(x){return x.id===id;});
+  if(!j)return;
+  j.status=status;
+  j.done=(status==='finalizado');
+  DB.sv();renderAg();updUrgDot();renderJobDetail();toast('✓ Status: '+JOB_STATUS[status].label);
+}
