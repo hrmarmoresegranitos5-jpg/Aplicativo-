@@ -214,8 +214,8 @@ function calcSF(k){
   var el=document.getElementById('sfr-'+k);if(!el)return;
   if(ml&&altCm){
     var m2=ml*(altCm/100)*q;
-    var mat=CFG.stones.find(function(s){return s.id===selMat;});
-    var pv=mat?m2*mat.pr:0;
+    var ambMat2=CFG.stones.find(function(s){return s.id===(amb?amb.selMat:selMat);})||CFG.stones[0];
+    var pv=ambMat2?m2*ambMat2.pr:0;
     var mo=ml*q*getPr(k);
     el.innerHTML='<span style="color:var(--grn)">Pedra: '+m2.toFixed(3)+'m² → R$ '+fm(pv)+'</span>  <span style="color:var(--gold2)">M.O.: R$ '+fm(mo)+'</span>';
   }else{el.textContent='';}
@@ -352,9 +352,51 @@ function pickCuba(id,tipo){
 // ═══ AMBIENTES ═══
 var TIPOS_AMBIENTE=['Cozinha','Banheiro','Lavabo','Soleira','Peitoril','Escada','Fachada','Túmulo','Outro'];
 
+function pickMatAmb(ambId,stoneId){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  amb.selMat=stoneId;
+  renderAmbientes();
+}
+
+function buildMatAmbHtml(amb){
+  var GRUPOS=[
+    {cat:'Granito Cinza',icon:'🩶'},
+    {cat:'Granito Preto',icon:'🖤'},
+    {cat:'Granito Branco',icon:'🤍'},
+    {cat:'Granito Verde',icon:'💚'},
+    {cat:'Mármore',icon:'🌿'},
+    {cat:'Travertino',icon:'🟤'},
+    {cat:'Quartzito',icon:'💎'},
+    {cat:'Ultra Compacto',icon:'⚡'}
+  ];
+  var h='';
+  GRUPOS.forEach(function(grp){
+    var ss=CFG.stones.filter(function(s){return s.cat===grp.cat;});
+    if(!ss.length)return;
+    h+='<div class="mcat" style="font-size:.55rem;margin:6px 0 4px;">'+grp.icon+' '+grp.cat+'</div>';
+    h+='<div class="mscroll">';
+    ss.forEach(function(s){
+      var on=s.id===amb.selMat?'on':'';
+      h+='<div class="mc '+on+'" style="min-width:100px;" onclick="pickMatAmb('+amb.id+',\''+s.id+'\')">';
+      h+='<div class="msw '+(s.photo?'':s.tx)+'" style="height:48px;">';
+      if(s.photo)h+='<img src="'+s.photo+'" alt="">';
+      h+='<div class="mshine"></div>';
+      h+='</div>';
+      h+='<div class="mbody">';
+      h+='<div class="mnm" style="font-size:.62rem;">'+s.nm+'</div>';
+      h+='<div class="mfin" style="font-size:.55rem;">R$ '+s.pr.toLocaleString('pt-BR')+'</div>';
+      h+='</div></div>';
+    });
+    h+='</div>';
+  });
+  return h;
+}
+
 function addAmbiente(){
   var id=Date.now();
-  ambientes.push({id:id,tipo:'Cozinha',pecas:[],selCuba:null,svState:{},acState:{}});
+  var defaultMat=ambientes.length>0?ambientes[ambientes.length-1].selMat:(selMat||null);
+  ambientes.push({id:id,tipo:'Cozinha',pecas:[],selCuba:null,svState:{},acState:{},selMat:defaultMat});
   addPecaAmb(id);
   renderAmbientes();
 }
@@ -423,6 +465,24 @@ function renderAmbientes(){
     h+='<button class="amb-rm" data-rm-amb="'+amb.id+'">✕ Remover</button>';
     h+='</div>';
     h+='<div class="amb-body">';
+    // Stone selector per ambiente
+    var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;});
+    h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:5px;">Pedra deste Ambiente</div>';
+    if(ambMat){
+      h+='<div style="display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.22);border-radius:9px;padding:8px 10px;margin-bottom:7px;cursor:pointer;" onclick="var el=document.getElementById(\'matpick-'+amb.id+'\');el.style.display=el.style.display===\'none\'?\'block\':\'none\';">';
+      h+='<div class="msw '+(ambMat.photo?'':ambMat.tx)+'" style="width:36px;height:36px;min-width:36px;border-radius:6px;flex-shrink:0;">';
+      if(ambMat.photo)h+='<img src="'+ambMat.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">';
+      h+='<div class="mshine"></div></div>';
+      h+='<div style="flex:1;min-width:0;"><div style="font-size:.78rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ambMat.nm+'</div>';
+      h+='<div style="font-size:.62rem;color:var(--gold2);">R$ '+ambMat.pr.toLocaleString('pt-BR')+'/m²</div></div>';
+      h+='<span style="font-size:.65rem;color:var(--t3);">Trocar ▾</span>';
+      h+='</div>';
+    } else {
+      h+='<div style="background:rgba(255,60,60,.08);border:1px solid rgba(255,80,80,.2);border-radius:9px;padding:8px 12px;margin-bottom:7px;font-size:.73rem;color:#ff6b6b;cursor:pointer;" onclick="var el=document.getElementById(\'matpick-'+amb.id+'\');el.style.display=\'block\';">⚠️ Nenhuma pedra selecionada — toque para escolher</div>';
+    }
+    h+='<div id="matpick-'+amb.id+'" style="display:'+(ambMat?'none':'block')+';background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:10px;max-height:320px;overflow-y:auto;">';
+    h+=buildMatAmbHtml(amb);
+    h+='</div>';
     // Tipo selector
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Tipo de Ambiente</div>';
     h+='<div class="amb-tipo">';
@@ -661,11 +721,13 @@ function calcular(){
   var cidade=document.getElementById('oCidade').value.trim()||'';
   var end=document.getElementById('oEnd').value.trim()||'';
   var obs=document.getElementById('oObs').value.trim()||'';
-  var mat=CFG.stones.find(function(s){return s.id===selMat;});
-  if(!mat){toast('Selecione o material');return;}
   if(!ambientes.length){toast('Adicione pelo menos um ambiente');return;}
+  var missingMat=ambientes.find(function(a){return !a.selMat;});
+  if(missingMat){toast('Selecione a pedra de todos os ambientes');renderAmbientes();return;}
+  // Global mat = first ambiente stone (for PDF header and backward compat)
+  var mat=CFG.stones.find(function(s){return s.id===ambientes[0].selMat;})||CFG.stones[0];
 
-  var totalM2=0,totalAcT=0;
+  var totalM2=0,totalAcT=0,totalPedT=0;
   var detHtml='';
   var txtAmbientes='';
   var allAcN=[];
@@ -676,6 +738,8 @@ function calcular(){
     var sv=amb.svState||{};
     var g=SV_DEFS[tipo]||SV_DEFS.Cozinha;
     var m2=0,acT=0,acL=[],acN=[],sfPcs=[],pds=[];
+    // Use per-ambiente stone
+    var ambMat=CFG.stones.find(function(s){return s.id===amb.selMat;})||mat;
 
     // Peças
     amb.pecas.forEach(function(p){
@@ -738,10 +802,10 @@ function calcular(){
       acN.push(label);
     });
 
-    totalM2+=m2;totalAcT+=acT;
+    totalM2+=m2;totalAcT+=acT;totalPedT+=pedTamb;
     allAcN=allAcN.concat(acN);
 
-    var pedTamb=m2*mat.pr;
+    var pedTamb=m2*ambMat.pr;
     var ambLabel=(idx+1)+'º Ambiente — '+tipo;
     detHtml+='<div style="font-size:.62rem;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:8px 0 4px;">'+ambLabel+'</div>';
     if(pds.length){
@@ -752,7 +816,7 @@ function calcular(){
     if(sfPcs.length){sfPcs.forEach(function(p){
       detHtml+='<div class="rrow"><span class="rk">'+p.l+' '+p.w+'ml×'+p.h+'cm'+(p.q>1?' ×'+p.q:'')+'</span><span class="rv">'+p.m2.toFixed(3)+'m²</span></div>';
     });}
-    detHtml+='<div class="rrow"><span class="rk">'+mat.nm+' — '+m2.toFixed(3)+'m²</span><span class="rv" style="color:var(--gold2)">R$ '+fm(pedTamb)+'</span></div>';
+    detHtml+='<div class="rrow"><span class="rk">'+ambMat.nm+' — '+m2.toFixed(3)+'m²</span><span class="rv" style="color:var(--gold2)">R$ '+fm(pedTamb)+'</span></div>';
     acL.forEach(function(a){detHtml+='<div class="rrow"><span class="rk">'+a.l+'</span><span class="rv">R$ '+fm(a.v)+'</span></div>';});
     if(acL.length===0&&m2===0)detHtml+='<div style="font-size:.72rem;color:var(--t4);padding:2px 0;">Nenhuma peça ou serviço neste ambiente</div>';
 
@@ -771,7 +835,7 @@ function calcular(){
     txtAmbientes+='\n─── '+ambLabel+' ───\n'+(tumTxt||'')+(pTxt||'(sem peças)')+(aTxt?'\nInclusos:\n'+aTxt:'');
   });
 
-  var pedT=totalM2*mat.pr;
+  var pedT=totalPedT;
   var bruto=pedT+totalAcT;
   var vista=bruto;
   var parc=vista*1.12;
@@ -843,7 +907,7 @@ function calcular(){
 
   // Salvar snapshot dos ambientes para poder recarregar depois
   var ambSnap=ambientes.map(function(a){
-    return {tipo:a.tipo,pecas:JSON.parse(JSON.stringify(a.pecas)),selCuba:a.selCuba,svState:JSON.parse(JSON.stringify(a.svState||{})),acState:JSON.parse(JSON.stringify(a.acState||{})),tumExtra:a.tumExtra?JSON.parse(JSON.stringify(a.tumExtra)):null};
+    return {tipo:a.tipo,pecas:JSON.parse(JSON.stringify(a.pecas)),selCuba:a.selCuba,svState:JSON.parse(JSON.stringify(a.svState||{})),acState:JSON.parse(JSON.stringify(a.acState||{})),tumExtra:a.tumExtra?JSON.parse(JSON.stringify(a.tumExtra)):null,selMat:a.selMat||null};
   });
   var q={id:Date.now(),date:td(),cli:cli,tel:tel,cidade:cidade,end:end,obs:obs,tipo:ambientes.map(function(a){return a.tipo;}).join('+'),mat:mat.nm,matPr:mat.pr,m2:totalM2,pedT:pedT,acT:totalAcT,acN:allAcN,pds:allPds,sfPcs:[],vista:vista,parc:parc,p8:p8,ent:ent,ambSnap:ambSnap};
   DB.q.unshift(q);DB.sv();pendQ=q;
