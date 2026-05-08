@@ -3030,14 +3030,25 @@ function gerarPDF(){
           +'letter-spacing:2px;text-transform:uppercase;color:#8a6020;font-weight:900;'
           +'border-bottom:1px solid #e0d8c8;">'+(idx+1)+'º AMBIENTE — '+tipo.toUpperCase()+'</td></tr>';
       }
+      var isBP=snap.tipo==='🏊 Borda Piscina';
+      var bpNomes=['Borda lateral A','Borda frontal B','Borda lateral C','Borda frontal D','Borda curva E','Canto boleado F','Trecho especial G','Borda interna H'];
       (snap.pecas||[]).forEach(function(p,i){
         if(!p.w||!p.h)return;
         var bg=i%2===0?'#fff':'#faf6ef';
-        allRowsHtml+='<tr>'
-          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:12px;font-weight:600;color:#1a1a1a;">'+(p.desc||'Peça')+'</td>'
-          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#888;text-align:right;letter-spacing:0.3px;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b style=\"color:#7a4400;\">×'+p.q+'</b>':'')+'</td>'
-          +'</tr>';
+        var pNome;
+        if(isBP){
+          var descFilled=p.desc&&p.desc.trim()&&p.desc.trim().toLowerCase()!=='peça';
+          pNome=descFilled?p.desc:(bpNomes[i]||'Borda trecho '+(i+1));
+        } else { pNome=p.desc||'Peça'; }
+        allRowsHtml+='<tr>'          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:12px;font-weight:600;color:#1a1a1a;">'+pNome+'</td>'          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#888;text-align:right;letter-spacing:0.3px;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b style=\"color:#7a4400;\">×'+p.q+'</b>':'')+'</td>'          +'</tr>';
       });
+      if(isBP){
+        var bpML=(snap.pecas||[]).reduce(function(a,p){return a+(p.w?(p.w/100)*(p.q||1):0);},0);
+        var bpLarg=snap.pecas&&snap.pecas.length>0?snap.pecas[0].h:0;
+        var bpBA=snap.bordaAcb||{};
+        var bpAcabStr=bpBA.tipo&&bpBA.tipo!=='polida'?' · acabamento '+bpBA.tipo:'';
+        allRowsHtml+='<tr><td colspan="2" style="background:linear-gradient(90deg,#e8f0ff,#f0f6ff);padding:10px 14px;border-bottom:2px solid #6ea4ff;border-top:1px solid #c8d8f8;">'          +'<span style="font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:#2255aa;font-weight:900;">📏 METRAGEM LINEAR</span>'          +'&nbsp;&nbsp;<span style="font-size:15px;font-weight:900;color:#1a3a7a;">'+bpML.toFixed(2)+'m</span>'          +'<span style="font-size:11px;color:#446;font-weight:600;"> de borda'+(bpLarg?' '+bpLarg+'cm':'')+bpAcabStr+'</span>'          +'</td></tr>';
+      }
       // Saihas/frontões do svState
       var g=SV_DEFS[tipo]||SV_DEFS.Cozinha;
       var sv=snap.svState||{};
@@ -3072,9 +3083,10 @@ function gerarPDF(){
 
 
   var svcs=(q.acN&&q.acN.length)?q.acN.map(function(a){
+    var svcTxt=polishSvcPDF(a);
     return '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f5f0e8;">'
       +'<span style="color:#C9A84C;font-weight:900;font-size:11px;margin-top:1px;flex-shrink:0;">&#10003;</span>'
-      +'<span style="font-size:12px;color:#333;line-height:1.4;">'+a+'</span>'
+      +'<span style="font-size:12px;color:#333;line-height:1.4;">'+svcTxt+'</span>'
       +'</div>';
   }).join(''):'';
 
@@ -3086,6 +3098,34 @@ function gerarPDF(){
 
   // sec header helper
   function sh(t){return '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;"><span style="font-size:7.5px;letter-spacing:3px;text-transform:uppercase;color:#C9A84C;font-weight:900;">'+t+'</span><div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.4),transparent);"></div></div>';}
+  var hasBP=q.ambSnap&&q.ambSnap.some(function(s){return s.tipo==='🏊 Borda Piscina';});
+  var bpSnapFirst=hasBP&&q.ambSnap?q.ambSnap.find(function(s){return s.tipo==='🏊 Borda Piscina';}):null;
+  var bpAcabTipoPDF=bpSnapFirst&&bpSnapFirst.bordaAcb?bpSnapFirst.bordaAcb.tipo:'polida';
+  function polishSvcPDF(txt){
+    if(!hasBP)return txt;
+    var map={
+      'Acab. Boleada 1 lateral':'Acabamento boleado na lateral aparente',
+      'Acab. Boleada 2 laterais':'Acabamento boleado nas laterais aparentes',
+      'Acab. Escovada 1 lateral':'Acabamento escovado na lateral aparente',
+      'Acab. Escovada 2 laterais':'Acabamento escovado nas laterais aparentes',
+      'Acab. Flameada 1 lateral':'Acabamento flameado na lateral',
+      'Acab. Flameada 2 laterais':'Acabamento flameado nas laterais',
+      'Acab. Antiderrapante 1 lateral':'Acabamento antiderrapante na lateral',
+      'Acab. Antiderrapante 2 laterais':'Acabamento antiderrapante nas laterais',
+      'Acab. polida':'Acabamento polido — incluído no material',
+      'Cantos Arredondados':'Cantos arredondados com polimento especial',
+      'Curvas Especiais':'Curvas especiais com recorte e acabamento',
+      'Borda Infinita':'Borda infinita com nivelamento especial'
+    };
+    for(var k in map){if(txt.indexOf(k)===0)return map[k];}
+    return txt;
+  }
+  var matNomePDF=q.mat;
+  if(hasBP&&bpAcabTipoPDF&&bpAcabTipoPDF!=='polida'){
+    var tipoCap=bpAcabTipoPDF.charAt(0).toUpperCase()+bpAcabTipoPDF.slice(1);
+    matNomePDF=q.mat+' '+tipoCap;
+    if(bpAcabTipoPDF==='antiderap'||bpAcabTipoPDF==='boleada')matNomePDF+=' Premium';
+  }
 
   var recHtml=''
   // ── WRAPPER
@@ -3142,6 +3182,9 @@ function gerarPDF(){
     +'</div>'
     +obsBox
 
+    // BANNER COMERCIAL – Borda Piscina
+    +(hasBP?'<div style="background:linear-gradient(135deg,#e8f0ff 0%,#f0f5ff 100%);border-left:4px solid #6ea4ff;border-radius:0 10px 10px 0;padding:13px 18px;margin-bottom:18px;">'      +'<div style="font-size:7.5px;letter-spacing:2.5px;text-transform:uppercase;color:#2255aa;font-weight:900;margin-bottom:5px;">🏊 BORDA DE PISCINA — Projeto Especializado</div>'      +'<div style="font-size:12.5px;color:#1a2a5a;font-weight:700;line-height:1.55;">Projeto fabricado sob medida com acabamento especializado para área molhada e externa.</div>'      +(bpAcabTipoPDF&&bpAcabTipoPDF!=='polida'?'<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:#2255aa;color:#fff;font-size:9px;font-weight:900;padding:3px 12px;border-radius:20px;letter-spacing:1px;">★ ACABAMENTO '+bpAcabTipoPDF.toUpperCase()+' PREMIUM</div>':'')      +'</div>':'')
+
     // MATERIAL E MEDIDAS
     +sh('Peças e Dimensões')
     +'<div style="border:1px solid #e8e0d0;border-radius:10px;overflow:hidden;margin-bottom:20px;">'
@@ -3166,7 +3209,7 @@ function gerarPDF(){
         +'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.78) 0%,rgba(0,0,0,0.45) 50%,rgba(0,0,0,0.12) 100%);">'
           +'<div style="position:absolute;left:20px;top:50%;transform:translateY(-50%);">'
             +'<div style="font-size:7px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.8);font-weight:900;margin-bottom:6px;">MATERIAL SELECIONADO</div>'
-            +'<div style="font-size:26px;font-weight:900;color:#C9A84C;line-height:1;letter-spacing:-0.3px;">'+q.mat+'</div>'
+            +'<div style="font-size:26px;font-weight:900;color:#C9A84C;line-height:1;letter-spacing:-0.3px;">'+matNomePDF+'</div>'
             +'<div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:5px;letter-spacing:1px;">'+(mat.cat||'')+(mat.cat&&mat.fin?' · ':'')+( mat.fin||'')+'</div>'
           +'</div>'
           +'<div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);text-align:right;">'
