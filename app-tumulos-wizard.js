@@ -19,40 +19,7 @@
 
   var _wStep = 0;
 
-  // ──────────────────────────────────────────────────────────────────────
-  // OVERRIDE: renderTum()
-  // ──────────────────────────────────────────────────────────────────────
-  window.renderTum = function () {
-    var pg = document.getElementById('pg9');
-    if (!pg) return;
-    tumAutoCalcDims();
-    tumAutoMatQty();
-    TUM.calc = tumCalc();
-
-    pg.innerHTML =
-      _wHero() +
-      _wStepper() +
-      '<div id="tumBody" class="wiz-body"></div>' +
-      '<div style="height:90px;"></div>';
-
-    _wRender();
-  };
-
-  // OVERRIDE: _tumRenderTab() — chamado por tumRecalc()
-  window._tumRenderTab = function () {
-    tumAutoCalcDims();
-    tumAutoMatQty();
-    TUM.calc = tumCalc();
-    _wRender();
-  };
-
-  // Compatibilidade com chamadas de tumTab() existentes
-  window.tumTab = function (t) {
-    var map = { cliente: 0, pedras: 2, extras: 4, mdo: 4, obra: 3, mat: 3, resumo: 5 };
-    if (map[t] !== undefined) { _wStep = map[t]; renderTum(); }
-  };
-
-  // ─── Navegação pública ───────────────────────────────────────────────
+  // ─── Navegação pública (disponível imediatamente) ────────────────────
   window.wizGoTo = function (i) {
     _wStep = Math.max(0, Math.min(i, STEPS.length - 1));
     renderTum();
@@ -64,6 +31,46 @@
   window.wizPrev = function () {
     if (_wStep > 0) { _wStep--; renderTum(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
+
+  // ──────────────────────────────────────────────────────────────────────
+  // APLICA OVERRIDES APÓS O LOAD (garante rodar depois do precif-tumulos)
+  // ──────────────────────────────────────────────────────────────────────
+  function _aplicarWizard() {
+
+    // OVERRIDE: renderTum()
+    window.renderTum = function () {
+      var pg = document.getElementById('pg9');
+      if (!pg) return;
+      tumAutoCalcDims();
+      tumAutoMatQty();
+      TUM.calc = tumCalc();
+
+      pg.innerHTML =
+        _wHero() +
+        _wStepper() +
+        '<div id="tumBody" class="wiz-body"></div>' +
+        '<div style="height:90px;"></div>';
+
+      _wRender();
+    };
+
+    // OVERRIDE: _tumRenderTab() — chamado por tumRecalc()
+    window._tumRenderTab = function () {
+      tumAutoCalcDims();
+      tumAutoMatQty();
+      TUM.calc = tumCalc();
+      _wRender();
+    };
+
+    // Compatibilidade com chamadas de tumTab() existentes
+    window.tumTab = function (t) {
+      var map = { cliente: 0, pedras: 2, extras: 4, mdo: 4, obra: 3, mat: 3, resumo: 5 };
+      if (map[t] !== undefined) { _wStep = map[t]; renderTum(); }
+    };
+  }
+
+  // Aplica no load (depois que precif-tumulos.js termina seus patches)
+  window.addEventListener('load', _aplicarWizard);
 
   // ──────────────────────────────────────────────────────────────────────
   // HERO — valor sempre visível no topo
