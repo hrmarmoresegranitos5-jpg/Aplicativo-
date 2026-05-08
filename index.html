@@ -2490,16 +2490,16 @@ function renderAmbientes(){
       h+='</div>';
     }
     if(amb.tipo==='🏊 Borda Piscina'){
-      if(!amb.bordaAcb)amb.bordaAcb={tipo:'polida',lados:0};
+      if(!amb.bordaAcb)amb.bordaAcb={tipo:'polida'};
       var ba=amb.bordaAcb;
       var baTipoDef=BP_TIPOS_ACB.find(function(t){return t.k===ba.tipo;})||BP_TIPOS_ACB[0];
-      var baML=_calcBordaAcbMl(amb,ba.lados);
-      var baVal=baML*baTipoDef.pr;
-      var baLadoLabels=['Sem acabamento','1 lateral maior','2 laterais maiores','3 lados','4 lados'];
+      // Resumo do ML total de todas as peças
+      var baTotalMLGlobal=0;
+      amb.pecas.forEach(function(p){var pl=p.acabLados||0;if(pl&&p.w)baTotalMLGlobal+=_calcBordaPcML(p,pl);});
       h+='<div style="background:rgba(100,180,255,.06);border:1px solid rgba(100,180,255,.22);border-radius:10px;padding:12px;margin:10px 0;">';
-      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:10px;">🏊 Acabamento da Borda</div>';
-      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">Tipo de acabamento</div>';
-      h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px;">';
+      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:10px;">🏊 Tipo de Acabamento da Borda</div>';
+      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:6px;">Selecione o tipo — o acabamento por peça é definido abaixo em cada peça</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">';
       BP_TIPOS_ACB.forEach(function(t){
         var sel=ba.tipo===t.k;
         h+='<div onclick="updBordaAcb('+amb.id+',\'tipo\',\''+t.k+'\')" style="cursor:pointer;padding:5px 11px;border-radius:7px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.15)')+';background:'+(sel?'rgba(100,180,255,.15)':'var(--s3)')+';font-size:.7rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t3)')+';">';
@@ -2507,22 +2507,11 @@ function renderAmbientes(){
         h+='</div>';
       });
       h+='</div>';
-      h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:5px;">Lados a acabar</div>';
-      h+='<div style="display:flex;gap:4px;margin-bottom:10px;">';
-      [0,1,2,3,4].forEach(function(v){
-        var sel=ba.lados===v;
-        var ll=['Sem','1 Lat.','2 Lat.','3 Lados','4 Lados'][v];
-        h+='<div onclick="updBordaAcb('+amb.id+',\'lados\','+v+')" style="cursor:pointer;flex:1;text-align:center;padding:6px 2px;border-radius:8px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.15)')+';background:'+(sel?'rgba(100,180,255,.15)':'var(--s3)')+';font-size:.62rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t3)')+';">'+ll+'</div>';
-      });
-      h+='</div>';
-      if(ba.lados>0){
-        h+='<div style="background:var(--s2);border-radius:8px;padding:8px 10px;">';
-        h+='<div style="font-size:.68rem;color:#6ea4ff;font-weight:600;">→ '+baTipoDef.l+' em '+baLadoLabels[ba.lados]+': <span style="color:var(--tx);font-weight:700;">'+baML.toFixed(2)+'m</span></div>';
-        if(baTipoDef.pr>0){
-          h+='<div style="font-size:.62rem;color:var(--t3);margin-top:3px;">R$ '+baTipoDef.pr+'/m × '+baML.toFixed(2)+'m = <span style="color:var(--gold2);font-weight:700;">R$ '+baVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span></div>';
-        } else {
-          h+='<div style="font-size:.62rem;color:var(--t4);margin-top:2px;">Acabamento polida — sem custo extra de M.O.</div>';
-        }
+      if(baTotalMLGlobal>0){
+        var baTotVal=baTotalMLGlobal*baTipoDef.pr;
+        h+='<div style="background:var(--s2);border-radius:8px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;">';
+        h+='<div style="font-size:.68rem;color:#6ea4ff;font-weight:700;">Total acabamento: '+baTotalMLGlobal.toFixed(2)+'m</div>';
+        h+=baTipoDef.pr>0?'<div style="font-size:.72rem;color:var(--gold2);font-weight:700;">R$ '+baTotVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>':'<div style="font-size:.65rem;color:var(--t4);">sem custo extra</div>';
         h+='</div>';
       }
       h+='<div style="font-size:.57rem;color:var(--t4);margin-top:8px;line-height:1.5;">💡 <b>Comprimento</b> = lado da piscina em cm &nbsp;·&nbsp; <b>Largura</b> = largura da borda em cm</div>';
@@ -2549,6 +2538,29 @@ function renderAmbientes(){
       h+='<div class="r2"><div class="f"><label>Comprimento (cm)</label><input id="pw-'+pc.id+'" placeholder="300" type="number" style="background:var(--s3);" value="'+(pc.w||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'w\',+this.value)"></div>';
       h+='<div class="f"><label>Largura (cm)</label><input id="ph-'+pc.id+'" placeholder="60" type="number" style="background:var(--s3);" value="'+(pc.h||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'h\',+this.value)"></div></div>';
       h+='<div style="max-width:130px;"><div class="f"><label>Quantidade</label><input id="pq-'+pc.id+'" type="number" style="background:var(--s3);" value="'+(pc.q||1)+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'q\',+this.value||1)"></div></div>';
+      if(amb.tipo==='🏊 Borda Piscina'){
+        var pcLados=pc.acabLados||0;
+        var pcBaTipDef=BP_TIPOS_ACB.find(function(t){return t.k===((amb.bordaAcb||{}).tipo||'polida');})||BP_TIPOS_ACB[0];
+        var pcML=_calcBordaPcML(pc,pcLados);
+        var pcVal=pcML*pcBaTipDef.pr;
+        var pcLdLabels=['Sem acabamento','1 lateral aparente','2 laterais aparentes','3 lados','todos os lados'];
+        h+='<div style="border-top:1px solid rgba(100,180,255,.15);margin-top:9px;padding-top:9px;">';
+        h+='<div style="font-size:.55rem;letter-spacing:1.5px;text-transform:uppercase;color:#6ea4ff;font-weight:700;margin-bottom:7px;">Acabamento desta peça</div>';
+        h+='<div style="display:flex;gap:3px;">';
+        [0,1,2,3,4].forEach(function(v){
+          var sel=pcLados===v;
+          var ll=['Sem','1 Lat.','2 Lat.','3 Lados','4 Lados'][v];
+          h+='<div onclick="updPcAcabLados('+amb.id+','+pc.id+','+v+')" style="cursor:pointer;flex:1;text-align:center;padding:5px 2px;border-radius:7px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.12)')+';background:'+(sel?'rgba(100,180,255,.18)':'var(--s3)')+';font-size:.58rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t4)')+';">'+ll+'</div>';
+        });
+        h+='</div>';
+        if(pcLados>0&&pc.w){
+          h+='<div style="margin-top:6px;background:var(--s2);border-radius:6px;padding:6px 9px;display:flex;align-items:center;justify-content:space-between;">';
+          h+='<div style="font-size:.63rem;color:#6ea4ff;font-weight:600;">'+pcLdLabels[pcLados]+': <b style="color:var(--tx);">'+pcML.toFixed(2)+'m</b></div>';
+          h+=pcBaTipDef.pr>0?'<div style="font-size:.63rem;color:var(--gold2);font-weight:700;">R$ '+pcVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div>':'<div style="font-size:.6rem;color:var(--t4);">s/ custo extra</div>';
+          h+='</div>';
+        }
+        h+='</div>';
+      }
       h+='</div>';
     });
     h+='</div>';
@@ -2571,6 +2583,19 @@ var BP_TIPOS_ACB=[
   {k:'antiderap', l:'Antiderrapante', pr:22},
   {k:'boleada',   l:'Boleada',        pr:25}
 ];
+function _calcBordaPcML(pc,lados){
+  if(!lados||!pc.w)return 0;
+  var nL=lados>=2?2:1;
+  var nS=lados>=4?2:lados>=3?1:0;
+  return (pc.w/100)*(pc.q||1)*nL+((pc.h||0)/100)*(pc.q||1)*nS;
+}
+function updPcAcabLados(ambId,pcId,val){
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(!amb)return;
+  var pc=amb.pecas.find(function(p){return p.id==pcId;});
+  if(pc)pc.acabLados=val;
+  renderAmbientes();
+}
 function _calcBordaAcbMl(amb,lados){
   if(!lados)return 0;
   var mlL=0,mlS=0;
@@ -2803,23 +2828,30 @@ function calcular(){
     });
 
     // Borda Piscina: acabamento lateral automático
-    if(tipo==='🏊 Borda Piscina'&&amb.bordaAcb){
-      var baLd=amb.bordaAcb.lados||0;
-      var baTp=amb.bordaAcb.tipo||'polida';
-      if(baLd>0){
-        var baML2=_calcBordaAcbMl(amb,baLd);
-        var baDef=BP_TIPOS_ACB.find(function(t){return t.k===baTp;})||BP_TIPOS_ACB[0];
-        var baLdStr=['','1 lateral','2 laterais','3 lados','4 lados'][baLd]||'';
-        if(baML2>0){
-          if(baDef.pr>0){
-            var baVl=baML2*baDef.pr;
-            acT+=baVl;
-            acL.push({l:'Acabamento '+baDef.l+' ('+baLdStr+', '+baML2.toFixed(2)+'m)',v:baVl});
-            acN.push('Acab. '+baDef.l+' '+baLdStr);
-          } else {
-            acN.push('Acab. polida '+baLdStr+' ('+baML2.toFixed(2)+'m)');
-          }
+    if(tipo==='🏊 Borda Piscina'){
+      var baTpGlobal=(amb.bordaAcb?amb.bordaAcb.tipo:null)||'polida';
+      var baDefGlobal=BP_TIPOS_ACB.find(function(t){return t.k===baTpGlobal;})||BP_TIPOS_ACB[0];
+      var bpPcTotal=0;
+      var bpPcLines=[];
+      var bpNomesPDF=['Borda lateral A','Borda frontal B','Borda lateral C','Borda frontal D','Borda curva E','Canto boleado F','Trecho especial G','Borda interna H'];
+      amb.pecas.forEach(function(p,pi){
+        var pLd=p.acabLados||0;
+        if(!pLd||!p.w)return;
+        var pML=_calcBordaPcML(p,pLd);
+        if(!pML)return;
+        bpPcTotal+=pML;
+        var pNome=p.desc&&p.desc.trim()&&p.desc.trim().toLowerCase()!=='peça'?p.desc:(bpNomesPDF[pi]||'Borda trecho '+(pi+1));
+        var ldStr=['','1 lateral aparente','2 laterais aparentes','3 lados','todos os lados'][pLd]||'';
+        bpPcLines.push(pNome+' — '+ldStr+' ('+pML.toFixed(2)+'m)');
+      });
+      if(bpPcTotal>0){
+        if(baDefGlobal.pr>0){
+          var bpVlTotal=bpPcTotal*baDefGlobal.pr;
+          acT+=bpVlTotal;
+          acL.push({l:'Acabamento '+baDefGlobal.l+' — '+bpPcTotal.toFixed(2)+'m linear',v:bpVlTotal});
         }
+        bpPcLines.forEach(function(ln){acN.push(ln);});
+        if(!bpPcLines.length)acN.push('Acabamento '+baDefGlobal.l+' — '+bpPcTotal.toFixed(2)+'m linear');
       }
     }
 
@@ -3040,7 +3072,14 @@ function gerarPDF(){
           var descFilled=p.desc&&p.desc.trim()&&p.desc.trim().toLowerCase()!=='peça';
           pNome=descFilled?p.desc:(bpNomes[i]||'Borda trecho '+(i+1));
         } else { pNome=p.desc||'Peça'; }
-        allRowsHtml+='<tr>'          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:12px;font-weight:600;color:#1a1a1a;">'+pNome+'</td>'          +'<td style="padding:10px 14px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:11.5px;color:#888;text-align:right;letter-spacing:0.3px;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b style=\"color:#7a4400;\">×'+p.q+'</b>':'')+'</td>'          +'</tr>';
+        var bpAcabLdsPDF=isBP?(p.acabLados||0):0;
+        var bpLdLabelsPDF=['','1 lateral aparente','2 laterais aparentes','3 lados','todos os lados'];
+        var bpAcabDescPDF=isBP&&bpAcabLdsPDF>0?bpSnapFirst&&bpSnapFirst.bordaAcb?'Acabamento '+bpAcabTipoPDF+' — '+bpLdLabelsPDF[bpAcabLdsPDF]:'':'';
+        var bpAcabMLPDF=isBP&&bpAcabLdsPDF>0&&p.w?_calcBordaPcML(p,bpAcabLdsPDF):0;
+        allRowsHtml+='<tr>'          +'<td style="padding:8px 14px 4px;background:'+bg+';border-bottom:'+(isBP&&bpAcabLdsPDF>0?'none':'1px solid #ede8dc')+';font-size:12px;font-weight:600;color:#1a1a1a;">'+pNome+'</td>'          +'<td style="padding:8px 14px 4px;background:'+bg+';border-bottom:'+(isBP&&bpAcabLdsPDF>0?'none':'1px solid #ede8dc')+';font-size:11.5px;color:#888;text-align:right;">'+p.w+' × '+p.h+' cm'+(p.q>1?' <b style=\"color:#7a4400;\">×'+p.q+'</b>':'')+'</td>'          +'</tr>';
+        if(isBP&&bpAcabLdsPDF>0){
+          allRowsHtml+='<tr>'            +'<td style="padding:3px 14px 9px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:10.5px;color:#6688bb;font-style:italic;">'+bpAcabDescPDF+(bpAcabMLPDF>0?' · <b>'+bpAcabMLPDF.toFixed(2)+'m</b>':'')+'</td>'            +'<td style="padding:3px 14px 9px;background:'+bg+';border-bottom:1px solid #ede8dc;font-size:10px;color:#9bb;text-align:right;">'+bpAcabMLPDF.toFixed(2)+'m linear</td>'            +'</tr>';
+        }
       });
       if(isBP){
         var bpML=(snap.pecas||[]).reduce(function(a,p){return a+(p.w?(p.w/100)*(p.q||1):0);},0);
