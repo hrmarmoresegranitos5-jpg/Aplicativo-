@@ -5,7 +5,7 @@
     "start_url": "/Aplicativo-/index.html",
     "scope": "/Aplicativo-/",
     "display": "standalone",
-    "orientation": "portrait",
+    "orientation": "any",
     "background_color": "#070709",
     "theme_color": "#C9A84C",
     "lang": "pt-BR",
