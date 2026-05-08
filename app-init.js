@@ -103,22 +103,32 @@ window.aplicarEstiloNi=function(){
     });
   }
   window.addEventListener('resize',setLayout);
-  window.addEventListener('orientationchange',function(){
-    // Android muda dimensões de forma assíncrona — tentar várias vezes até estabilizar
-    var tries=0;
-    var lastW=0,lastH=0;
+
+  // ── ORIENTAÇÃO: listener robusto para Android PWA ──
+  function _onOrientationChange(){
+    var tries=0, lastW=0, lastH=0;
     function tryLayout(){
-      var W=window.innerWidth,H=window.innerHeight;
+      var W=window.innerWidth, H=window.innerHeight;
       setLayout();
       tries++;
-      // Se dimensões mudaram ou ainda não estabilizaram, tentar de novo
-      if(tries<10&&(W!==lastW||H!==lastH||W===H)){
-        lastW=W;lastH=H;
-        setTimeout(tryLayout,200);
+      if(tries<15&&(W!==lastW||H!==lastH||W===H)){
+        lastW=W; lastH=H;
+        setTimeout(tryLayout,150);
       }
     }
-    setTimeout(tryLayout,100);
-  });
+    setTimeout(tryLayout,50);
+  }
+  window.addEventListener('orientationchange',_onOrientationChange);
+  // API moderna — mais confiável no Android Chrome PWA
+  if(screen.orientation){
+    screen.orientation.addEventListener('change',_onOrientationChange);
+  }
+  // visualViewport garante que o layout atualiza ao girar
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',function(){
+      setLayout();
+    });
+  }
   setLayout();
 
   initCFG();
