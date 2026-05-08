@@ -1334,6 +1334,7 @@ function openApp(pg){
         <div class="cfgtab" data-cftab="5">📷 Catálogo</div>
         <div class="cfgtab" data-cftab="3">⚙️ Serviços</div>
         <div class="cfgtab" data-cftab="4">🏢 Empresa</div>
+        <div class="cfgtab" data-cftab="7">🏷 Por Ambiente</div>
       </div>
       <div class="cfgbody" id="cfgBody"></div>
     </div>
@@ -1686,6 +1687,7 @@ function initCFG(){
   CFG.lav.forEach(function(c){if(CUBA_IMGS[c.id])c.photo=CUBA_IMGS[c.id];});
   // Garantir que ac existe (usuários com cfg antiga)
   if(!CFG.ac)CFG.ac=JSON.parse(JSON.stringify(DEF_ACESS));
+  if(!CFG.svAmb)CFG.svAmb={};
   svCFG();
 }
 function syncSVDefsFromList(){
@@ -2143,6 +2145,21 @@ SV_DEFS['Túmulo'] = SV_DEFS.Tumulo;
 function getSVGrp(){return SV_DEFS[document.getElementById('oTipo').value]||SV_DEFS.Cozinha;}
 function getIt(k){var g=getSVGrp();for(var i=0;i<g.length;i++){for(var j=0;j<g[i].its.length;j++){if(g[i].its[j].k===k)return g[i].its[j];}}return null;}
 function getPr(k){return CFG.sv[k]||0;}
+function getPrAmb(k,tipo){
+  if(tipo&&CFG.svAmb&&CFG.svAmb[tipo]&&CFG.svAmb[tipo][k]!=null)return CFG.svAmb[tipo][k];
+  return getPr(k);
+}
+function updSvAmb(tipo,k,val){
+  if(!CFG.svAmb)CFG.svAmb={};
+  if(!CFG.svAmb[tipo])CFG.svAmb[tipo]={};
+  CFG.svAmb[tipo][k]=+val;
+  svCFG();
+}
+function resetSvAmb(tipo){
+  if(!confirm('Restaurar preços padrão de '+tipo+'?'))return;
+  if(CFG.svAmb)delete CFG.svAmb[tipo];
+  svCFG();buildCfg();
+}
 
 function buildSV(){
   selCuba=null;
@@ -2492,7 +2509,7 @@ function renderAmbientes(){
     if(amb.tipo==='🏊 Borda Piscina'){
       if(!amb.bordaAcb)amb.bordaAcb={tipo:'polida'};
       var ba=amb.bordaAcb;
-      var baTipoDef=BP_TIPOS_ACB.find(function(t){return t.k===ba.tipo;})||BP_TIPOS_ACB[0];
+      var _bpTipos=bpGetTiposAcab();var baTipoDef=_bpTipos.find(function(t){return t.k===ba.tipo;})||_bpTipos[0];
       // Resumo do ML total de todas as peças
       var baTotalMLGlobal=0;
       amb.pecas.forEach(function(p){var pl=p.acabLados||0;if(pl&&p.w)baTotalMLGlobal+=_calcBordaPcML(p,pl);});
@@ -2500,7 +2517,7 @@ function renderAmbientes(){
       h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:#6ea4ff;font-weight:600;margin-bottom:10px;">🏊 Tipo de Acabamento da Borda</div>';
       h+='<div style="font-size:.6rem;color:var(--t3);margin-bottom:6px;">Selecione o tipo — o acabamento por peça é definido abaixo em cada peça</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">';
-      BP_TIPOS_ACB.forEach(function(t){
+      bpGetTiposAcab().forEach(function(t){
         var sel=ba.tipo===t.k;
         h+='<div onclick="updBordaAcb('+amb.id+',\'tipo\',\''+t.k+'\')" style="cursor:pointer;padding:5px 11px;border-radius:7px;border:1.5px solid '+(sel?'#6ea4ff':'rgba(100,180,255,.15)')+';background:'+(sel?'rgba(100,180,255,.15)':'var(--s3)')+';font-size:.7rem;font-weight:'+(sel?700:500)+';color:'+(sel?'#9bbfff':'var(--t3)')+';">';
         h+=t.l+(t.pr>0?' <span style="font-size:.55rem;color:var(--t4);">R$'+t.pr+'/m</span>':'');
@@ -2540,7 +2557,7 @@ function renderAmbientes(){
       h+='<div style="max-width:130px;"><div class="f"><label>Quantidade</label><input id="pq-'+pc.id+'" type="number" style="background:var(--s3);" value="'+(pc.q||1)+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'q\',+this.value||1)"></div></div>';
       if(amb.tipo==='🏊 Borda Piscina'){
         var pcLados=pc.acabLados||0;
-        var pcBaTipDef=BP_TIPOS_ACB.find(function(t){return t.k===((amb.bordaAcb||{}).tipo||'polida');})||BP_TIPOS_ACB[0];
+        var _bpTiposPc=bpGetTiposAcab();var pcBaTipDef=_bpTiposPc.find(function(t){return t.k===((amb.bordaAcb||{}).tipo||'polida');})||_bpTiposPc[0];
         var pcML=_calcBordaPcML(pc,pcLados);
         var pcVal=pcML*pcBaTipDef.pr;
         var pcLdLabels=['Sem acabamento','1 lateral aparente','2 laterais aparentes','3 lados','todos os lados'];
@@ -2576,13 +2593,20 @@ function renderAmbientes(){
   }catch(e2){console.error('renderAmbientes:',e2);toast('Erro: '+e2.message);}
 }
 // ─── BORDA PISCINA: cálculo automático de ML por lados ───────────
-var BP_TIPOS_ACB=[
+var BP_TIPOS_ACB_DEF=[
   {k:'polida',    l:'Polida',         pr:25},
   {k:'escovada',  l:'Escovada',       pr:35},
   {k:'flameada',  l:'Flameada',       pr:40},
   {k:'antiderap', l:'Antiderrapante', pr:45},
   {k:'boleada',   l:'Boleada',        pr:50}
 ];
+function bpGetTiposAcab(){
+  var sv=(CFG.svAmb&&CFG.svAmb['🏊 Borda Piscina'])||{};
+  return BP_TIPOS_ACB_DEF.map(function(d){
+    var prKey='bp_'+d.k;
+    return {k:d.k,l:d.l,pr:sv[prKey]!=null?sv[prKey]:d.pr};
+  });
+}
 function _calcBordaPcML(pc,lados){
   if(!lados||!pc.w)return 0;
   var nL=lados>=2?2:1;
@@ -2622,7 +2646,7 @@ function buildSVHtml(amb){
   g.forEach(function(grp){
     h+='<div class="svblk"><div class="svhd">'+grp.g+'</div>';
     grp.its.forEach(function(it){
-      var pr=getPr(it.k);
+      var pr=getPrAmb(it.k, amb.tipo);
       var isOn=!!sv[it.k];
       var hint=it.u==='sf'?'R$ '+pr+'/ml + m² pedra':it.u==='ml'?'R$ '+pr+'/ml':it.u==='km'?'R$ '+pr+'/km':it.u==='cuba'?'Selecionar modelo':it.u==='livre'?'Valor livre':'R$ '+pr;
       h+='<div class="svrow'+(isOn?' on':'')+'" data-sv="'+it.k+'" data-amb="'+amb.id+'">';
@@ -2795,7 +2819,7 @@ function calcular(){
         var ml=svd.ml||0,altCm=svd.altCm||0,q=svd.q||1;
         if(ml&&altCm){
           var sfM2=ml*(altCm/100)*q;
-          var sfMo=ml*q*getPr(it.k);
+          var sfMo=ml*q*getPrAmb(it.k,tipo);
           m2+=sfM2;acT+=sfMo;
           acL.push({l:it.l+' '+ml+'ml×'+altCm+'cm',v:sfMo});
           acN.push(it.l+' ('+ml+'ml, '+sfM2.toFixed(3)+'m²)');
@@ -2808,9 +2832,9 @@ function calcular(){
         return;
       }
       if(it.u==='livre'){var v=svd.qty||0;if(v>0){acT+=v;acL.push({l:it.l,v:v});acN.push(it.l);}return;}
-      if(it.fx===1){var p2=getPr(it.k);if(p2>0){acT+=p2;acL.push({l:it.l,v:p2});acN.push(it.l);}return;}
+      if(it.fx===1){var p2=getPrAmb(it.k,tipo);if(p2>0){acT+=p2;acL.push({l:it.l,v:p2});acN.push(it.l);}return;}
       var qty=svd.qty||1;
-      var vv=getPr(it.k)*qty;acT+=vv;acL.push({l:it.l+(qty>1?' ('+qty+it.u+')':''),v:vv});acN.push(it.l);
+      var vv=getPrAmb(it.k,tipo)*qty;acT+=vv;acL.push({l:it.l+(qty>1?' ('+qty+it.u+')':''),v:vv});acN.push(it.l);
     });});
 
     // Acessórios do catálogo
@@ -2830,7 +2854,7 @@ function calcular(){
     // Borda Piscina: acabamento lateral automático
     if(tipo==='🏊 Borda Piscina'){
       var baTpGlobal=(amb.bordaAcb?amb.bordaAcb.tipo:null)||'polida';
-      var baDefGlobal=BP_TIPOS_ACB.find(function(t){return t.k===baTpGlobal;})||BP_TIPOS_ACB[0];
+      var _bpTiposG=bpGetTiposAcab();var baDefGlobal=_bpTiposG.find(function(t){return t.k===baTpGlobal;})||_bpTiposG[0];
       var bpPcTotal=0;
       var bpPcLines=[];
       var bpNomesPDF=['Borda lateral A','Borda frontal B','Borda lateral C','Borda frontal D','Borda curva E','Canto boleado F','Trecho especial G','Borda interna H'];
@@ -4101,6 +4125,69 @@ function buildCfg(){
     });
     h+='<button class="cfgadd" onclick="CFG.fixos.push({n:\'Novo custo\',v:0});renderFixos();svCFG();buildCfg();">+ Adicionar custo fixo</button>';
     h+='</div>';
+  }
+  else if(cfgTab===7){
+    // POR AMBIENTE — tabela de preços por ambiente
+    var AMB_PR=[
+      {tipo:'Cozinha',       icon:'🍳', svs:[
+        {k:'s_reta',    l:'Sainha Reta',       u:'ml'},{k:'s_45',    l:'Sainha 45°',       u:'ml'},
+        {k:'s_boleada', l:'Sainha Boleada',    u:'ml'},{k:'s_slim',  l:'Sainha Slim',       u:'ml'},
+        {k:'frontao',   l:'Frontão Reto',      u:'ml'},{k:'frontao_chf',l:'Frontão Chanfrado',u:'ml'},
+        {k:'inst',      l:'Instalação Padrão', u:'un'},{k:'inst_c',  l:'Inst. Complexa',   u:'un'}]},
+      {tipo:'Banheiro',      icon:'🚿', svs:[
+        {k:'s_reta',    l:'Sainha Reta',       u:'ml'},{k:'s_45',    l:'Sainha 45°',       u:'ml'},
+        {k:'s_boleada', l:'Sainha Boleada',    u:'ml'},
+        {k:'inst',      l:'Instalação Padrão', u:'un'},{k:'inst_c',  l:'Inst. Complexa',   u:'un'}]},
+      {tipo:'Escada',        icon:'🪜', svs:[
+        {k:'s_reta',    l:'Sainha Reta',       u:'ml'},{k:'s_45',    l:'Sainha 45°',       u:'ml'},
+        {k:'s_boleada', l:'Sainha Boleada',    u:'ml'},
+        {k:'inst',      l:'Instalação Padrão', u:'un'},{k:'inst_c',  l:'Inst. Complexa',   u:'un'}]},
+      {tipo:'Fachada',       icon:'🏛️', svs:[
+        {k:'tubo',      l:'Tubo Metálico',     u:'un'},{k:'cant',    l:'Cantoneira',        u:'un'},
+        {k:'inst',      l:'Instalação Padrão', u:'un'},{k:'inst_c',  l:'Inst. Complexa',   u:'un'}]},
+      {tipo:'Túmulo',        icon:'⚰️', svs:[
+        {k:'tum_tampa', l:'Tampa',             u:'m²'},{k:'tum_lat', l:'Laterais',         u:'m²'},
+        {k:'tum_mol',   l:'Moldura',           u:'ml'},{k:'tum_ping',l:'Pingadeira',        u:'ml'},
+        {k:'tum_lapide',l:'Lápide c/ texto',   u:'un'},{k:'tum_mont',l:'Montagem',         u:'un'},
+        {k:'tum_pol',   l:'Polimento/Limpeza', u:'un'},{k:'tum_bisel',l:'Borda Biselada',  u:'ml'}]},
+      {tipo:'🏊 Borda Piscina',icon:'🏊',svs:[
+        {k:'bp_polida',    l:'Polida',          u:'ml',bp:true},
+        {k:'bp_escovada',  l:'Escovada',        u:'ml',bp:true},
+        {k:'bp_flameada',  l:'Flameada',        u:'ml',bp:true},
+        {k:'bp_antiderap', l:'Antiderrapante',  u:'ml',bp:true},
+        {k:'bp_boleada',   l:'Boleada',         u:'ml',bp:true},
+        {k:'bp_c_arred',   l:'Cantos Arredond.',u:'un'},{k:'bp_c_curva',l:'Curvas Especiais',u:'un'},
+        {k:'bp_c_infinita',l:'Borda Infinita',  u:'un'}]}
+    ];
+    h+='<div style="font-size:.72rem;color:var(--t2);margin-bottom:14px;line-height:1.6;">Defina preços diferentes por ambiente. Cada serviço usa seu preço específico no orçamento.</div>';
+    AMB_PR.forEach(function(amb){
+      var svAmb=(CFG.svAmb&&CFG.svAmb[amb.tipo])||{};
+      h+='<div class="cfgsec">';
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:11px 13px;background:rgba(201,168,76,.05);border-bottom:1px solid var(--bd);">';
+      h+='<span style="font-size:1.1rem;">'+amb.icon+'</span>';
+      h+='<span style="font-size:.82rem;font-weight:700;color:var(--gold);">'+amb.tipo+'</span>';
+      h+='<button onclick="resetSvAmb(''+amb.tipo+'')" style="margin-left:auto;background:none;border:1px solid var(--bd);border-radius:6px;color:var(--t4);font-size:.6rem;padding:3px 8px;cursor:pointer;font-family:Outfit,sans-serif;">↺ Padrão</button>';
+      h+='</div>';
+      amb.svs.forEach(function(sv){
+        var curVal;
+        if(sv.bp){
+          // Borda Piscina: lê de svAmb com chave bp_k
+          curVal=svAmb[sv.k]!=null?svAmb[sv.k]:BP_TIPOS_ACB_DEF.find(function(d){return 'bp_'+d.k===sv.k;})||{pr:0};
+          if(typeof curVal==='object')curVal=curVal.pr;
+        } else {
+          curVal=svAmb[sv.k]!=null?svAmb[sv.k]:getPr(sv.k);
+        }
+        var isCustom=svAmb[sv.k]!=null;
+        h+='<div class="cfg-row">';
+        h+='<span class="cfg-lbl" style="'+(isCustom?'color:var(--gold2);':'')+'">'+sv.l+'</span>';
+        h+='<div style="display:flex;align-items:center;gap:5px;">';
+        h+='<span style="font-size:.6rem;color:var(--t4);">R$</span>';
+        h+='<input class="cfginp" type="number" style="width:80px;text-align:right;'+(isCustom?'color:var(--gold2);border-color:rgba(201,168,76,.4);':'')+'" value="'+curVal+'" onchange="updSvAmb(''+amb.tipo+'',''+sv.k+'',this.value);buildCfg();">';
+        h+='<span style="font-size:.6rem;color:var(--t4);">'+sv.u+'</span>';
+        h+='</div></div>';
+      });
+      h+='</div>';
+    });
   }
   else if(cfgTab===6){
     // ACESSÓRIOS
