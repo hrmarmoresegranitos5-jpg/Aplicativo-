@@ -30,3 +30,22 @@ No celular: toque em **Compartilhar → Adicionar à tela inicial**.
 | `manifest.json` | Configuração PWA |
 | `sw.js` | Service Worker (offline) |
 
+
+## ✅ Etapas implementadas
+
+### Etapa 2 — Precificação Automática de Túmulos
+- Tabela de preços específica para túmulos (Config → ⚰️ Túmulos)
+- Pedras: Granito Simples / Padrão / Premium / Mármore (R$/m²)
+- Estrutura: Fundação, Concreto, Ferragem, Gaveta Extra, Alvenaria
+- Acabamentos: Lateral/ml, Moldura/ml, Lápide, Cruz, Foto, Polimento, Resinagem
+- Mão de obra: diárias e valores de serviço
+- Cálculo automático por tamanho, gavetas, acabamento e revestimento
+- Painel ⚡ na aba Cliente do orçamento
+
+### Etapa 3 — Estratégia Inteligente de Venda
+- Botão "⚖️ Comparar Modelos" no orçamento de túmulo
+- 3 pacotes visuais: Essencial / Padrão / Nobre
+- Ilustrações SVG proporcionais de cada modelo
+- Tabela comparativa completa de recursos
+- Cálculo de upsell automático ("por R$ X a mais você tem...")
+- Aplicação com 1 toque: preenche orçamento completo
