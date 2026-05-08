@@ -2,7 +2,7 @@
 // HR Mármores e Granitos — Service Worker
 // ═══════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'hr-app-v14';
+var CACHE_VERSION = 'hr-app-v15';
 
 // Arquivos do app shell — cacheados para funcionar offline
 var APP_SHELL = [
