@@ -93,55 +93,56 @@ SV_DEFS['🏊 Borda Piscina']=[
 ];
 
 SV_DEFS.Tumulo=[
-  {g:'🪨 Estrutura de Pedra',its:[
-    {k:'tum_tampa',  l:'Tampa',                  u:'sf'},
-    {k:'tum_lat',    l:'Laterais (×2)',           u:'sf'},
-    {k:'tum_front',  l:'Frontais (×2)',           u:'sf'},
-    {k:'tum_base',   l:'Base',                    u:'sf'},
-    {k:'tum_det',    l:'Detalhe Superior',        u:'sf'},
-    {k:'tum_sainha', l:'Sainha Frontal',          u:'sf'},
-    {k:'tum_mol',    l:'Moldura',                 u:'ml'},
-    {k:'tum_ping',   l:'Pingadeira',              u:'ml'}
+  // ── Peças de pedra: medidas em ml × cm de altura, m² calculado automaticamente ──
+  {g:'🪨 Peças de Pedra (m²)',its:[
+    {k:'tum_tampa',  l:'Tampa Superior',           u:'sf'},
+    {k:'tum_lat',    l:'Laterais (×2)',            u:'sf'},
+    {k:'tum_front',  l:'Frente / Frontal',         u:'sf'},
+    {k:'tum_base',   l:'Base / Plataforma',        u:'sf'},
+    {k:'tum_det',    l:'Detalhe Superior',         u:'sf'},
+    {k:'tum_sainha', l:'Sainha Frontal',           u:'sf'},
+    {k:'tum_gav1',   l:'Frente de Gaveta — 1ª',   u:'sf'},
+    {k:'tum_gav2',   l:'Frente de Gaveta — 2ª',   u:'sf'},
+    {k:'tum_gav3',   l:'Frente de Gaveta — 3ª',   u:'sf'}
   ]},
-  {g:'⚰️ Gavetas / Compartimentos',its:[
-    {k:'tum_gav1',   l:'Frente de Gaveta — 1ª',  u:'sf'},
-    {k:'tum_gav2',   l:'Frente de Gaveta — 2ª',  u:'sf'},
-    {k:'tum_gav3',   l:'Frente de Gaveta — 3ª',  u:'sf'}
+  // ── Acabamentos em metro linear ──
+  {g:'📐 Acabamentos (ml)',its:[
+    {k:'tum_mol',    l:'Moldura decorativa',       u:'ml'},
+    {k:'tum_ping',   l:'Pingadeira',               u:'ml'},
+    {k:'tum_bisel',  l:'Borda Biselada',           u:'ml'}
   ]},
-  {g:'🪦 Lápide / Plaquinha / Foto',its:[
-    {k:'tum_lapide', l:'Lápide de Granito',       u:'un', fx:1},
-    {k:'tum_plaq',   l:'Plaquinha Gravada',       u:'un', fx:1},
-    {k:'tum_foto',   l:'Foto em Porcelana',       u:'un', fx:1},
-    {k:'tum_cruz',   l:'Cruz em Granito',         u:'un', fx:1}
+  // ── Itens por unidade com preço fixo ──
+  {g:'🪦 Lápide / Foto / Cruz',its:[
+    {k:'tum_lapide', l:'Lápide de Granito',        u:'un', fx:1},
+    {k:'tum_plaq',   l:'Plaquinha Gravada',        u:'un', fx:1},
+    {k:'tum_foto',   l:'Foto em Porcelana',        u:'un', fx:1},
+    {k:'tum_cruz',   l:'Cruz em Granito',          u:'un', fx:1},
+    {k:'tum_pol',    l:'Polimento Extra',           u:'un', fx:1},
+    {k:'tum_rec',    l:'Recorte / Furo',           u:'un', fx:0}
   ]},
-  {g:'🔧 Acabamentos',its:[
-    {k:'tum_rec',    l:'Recorte / Furo',          u:'un', fx:0},
-    {k:'tum_pol',    l:'Polimento Extra',          u:'un', fx:1},
-    {k:'tum_bisel',  l:'Borda Biselada',          u:'ml'}
-  ]},
-  {g:'🧱 Construção — Pedreiro',its:[
-    {k:'tum_fund',   l:'Fundação',                u:'livre'},
-    {k:'tum_lev',    l:'Levantamento Alvenaria',  u:'livre'},
-    {k:'tum_reb',    l:'Reboco / Chapisco',       u:'livre'},
-    {k:'tum_conc',   l:'Concreto Armado',         u:'livre'},
-    {k:'tum_cpiso',  l:'Contra-piso',             u:'livre'},
-    {k:'tum_acob',   l:'Acabamento Final Obra',   u:'livre'}
-  ]},
-  {g:'🪣 Materiais de Construção',its:[
-    {k:'tum_cim',    l:'Cimento / Areia',         u:'livre'},
-    {k:'tum_cola',   l:'Cola p/ Granito',         u:'livre'},
-    {k:'tum_rej',    l:'Rejunte',                 u:'livre'},
-    {k:'tum_ferro',  l:'Ferro / Tela',            u:'livre'},
-    {k:'tum_tijolo', l:'Tijolos / Blocos',        u:'livre'},
-    {k:'tum_frete',  l:'Frete / Entrega Material',u:'livre'}
-  ]},
+  // ── Mão de obra ──
   {g:'🔨 Mão de Obra',its:[
-    {k:'tum_mont',   l:'Montagem / Instalação',   u:'un', fx:1},
-    {k:'tum_montc',  l:'Instalação Complexa',     u:'un', fx:1}
+    {k:'tum_mont',   l:'Montagem / Instalação',    u:'un', fx:1},
+    {k:'tum_montc',  l:'Instalação Complexa',      u:'un', fx:1}
+  ]},
+  // ── Construção e materiais: valores livres informados pelo vendedor ──
+  {g:'🧱 Construção & Materiais',its:[
+    {k:'tum_fund',   l:'Fundação',                 u:'livre'},
+    {k:'tum_lev',    l:'Levantamento / Alvenaria', u:'livre'},
+    {k:'tum_reb',    l:'Reboco / Chapisco',        u:'livre'},
+    {k:'tum_conc',   l:'Concreto Armado',          u:'livre'},
+    {k:'tum_cpiso',  l:'Contra-piso',              u:'livre'},
+    {k:'tum_acob',   l:'Acabamento Final Obra',    u:'livre'},
+    {k:'tum_cim',    l:'Cimento / Areia',          u:'livre'},
+    {k:'tum_cola',   l:'Cola p/ Granito',          u:'livre'},
+    {k:'tum_rej',    l:'Rejunte',                  u:'livre'},
+    {k:'tum_ferro',  l:'Ferro / Tela',             u:'livre'},
+    {k:'tum_tijolo', l:'Tijolos / Blocos',         u:'livre'},
+    {k:'tum_frete',  l:'Frete / Entrega Material', u:'livre'}
   ]},
   {g:'Deslocamento',its:[
-    {k:'desl_cid',   l:'Na cidade',               u:'livre'},
-    {k:'desl_for',   l:'Fora da cidade',          u:'km', fx:0}
+    {k:'desl_cid',   l:'Na cidade',                u:'livre'},
+    {k:'desl_for',   l:'Fora da cidade',           u:'km', fx:0}
   ]}
 ];
 
@@ -150,7 +151,23 @@ SV_DEFS['Túmulo'] = SV_DEFS.Tumulo;
 
 function getSVGrp(){return SV_DEFS[document.getElementById('oTipo').value]||SV_DEFS.Cozinha;}
 function getIt(k){var g=getSVGrp();for(var i=0;i<g.length;i++){for(var j=0;j<g[i].its.length;j++){if(g[i].its[j].k===k)return g[i].its[j];}}return null;}
-function getPr(k){return CFG.sv[k]||0;}
+// Preços padrão de túmulo — usados como fallback quando CFG.sv não tem o valor
+var DEF_TUM_SV = {
+  tum_tampa: 85,   tum_lat: 85,    tum_front: 85,  tum_base: 85,
+  tum_det:   85,   tum_sainha: 85, tum_gav1:  85,  tum_gav2:  85,
+  tum_gav3:  85,   tum_mol:   110, tum_ping:  80,  tum_bisel: 90,
+  tum_lapide:480,  tum_plaq:  220, tum_foto: 170,  tum_cruz:  340,
+  tum_pol:   160,  tum_rec:    50, tum_mont:  380, tum_montc: 580,
+  // bp_ (borda piscina)
+  bp_boleada:110, bp_antiderap:120, bp_pingad:90, bp_mcana:100, bp_chanfro:95,
+  bp_c_arred:180, bp_c_curva:220, bp_c_infinita:350
+};
+
+function getPr(k){
+  var v=CFG.sv[k];
+  if(v!==undefined&&v!==null)return v;
+  return DEF_TUM_SV[k]||0;
+}
 
 function buildSV(){
   selCuba=null;
@@ -533,6 +550,11 @@ function renderAmbientes(){
         h+='<option value="'+st+'"'+(te.subtipo===st?' selected':'')+'>'+st+'</option>';
       });
       h+='</select></div>';
+      // Dica visual de preenchimento das peças
+      h+='<div style="margin-top:10px;padding:8px 10px;background:rgba(201,168,76,.08);border-radius:8px;font-size:.62rem;color:var(--t3);line-height:1.6;">';
+      h+='💡 <b>Como preencher as peças:</b> informe Comprimento × Largura de cada face.<br>';
+      h+='Ex: Tampa → 220×90cm | Lateral → 220×70cm (qtd 2) | Frente → 90×70cm';
+      h+='</div>';
       h+='</div>';
     }
     if(amb.tipo==='🏊 Borda Piscina'){
@@ -853,10 +875,9 @@ function calcular(){
       acN.push(label);
     });
 
+    var pedTamb=m2*ambMat.pr;
     totalM2+=m2;totalAcT+=acT;totalPedT+=pedTamb;
     allAcN=allAcN.concat(acN);
-
-    var pedTamb=m2*ambMat.pr;
     var ambLabel=(idx+1)+'º Ambiente — '+tipo;
     detHtml+='<div style="font-size:.62rem;color:var(--gold);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:8px 0 4px;">'+ambLabel+'</div>';
     if(pds.length){
@@ -870,6 +891,15 @@ function calcular(){
     detHtml+='<div class="rrow"><span class="rk">'+ambMat.nm+' — '+m2.toFixed(3)+'m²</span><span class="rv" style="color:var(--gold2)">R$ '+fm(pedTamb)+'</span></div>';
     acL.forEach(function(a){detHtml+='<div class="rrow"><span class="rk">'+a.l+'</span><span class="rv">R$ '+fm(a.v)+'</span></div>';});
     if(acL.length===0&&m2===0)detHtml+='<div style="font-size:.72rem;color:var(--t4);padding:2px 0;">Nenhuma peça ou serviço neste ambiente</div>';
+    // Dados do túmulo no bloco de detalhe
+    if(amb.tipo==='Túmulo'&&amb.tumExtra){
+      var teD=amb.tumExtra;var tumInfo=[];
+      if(teD.falecido)tumInfo.push('Falecido(a): <b>'+escH(teD.falecido)+'</b>');
+      if(teD.cemiterio)tumInfo.push('Cemitério: '+escH(teD.cemiterio));
+      if(teD.quadra||teD.lote)tumInfo.push('Quadra '+(teD.quadra||'—')+' — Lote '+(teD.lote||'—'));
+      if(teD.subtipo)tumInfo.push('Tipo: '+teD.subtipo);
+      if(tumInfo.length)detHtml+='<div style="background:rgba(201,168,76,.07);border-radius:8px;padding:7px 10px;margin:4px 0;font-size:.62rem;color:var(--t3);line-height:1.8;">'+tumInfo.join(' · ')+'</div>';
+    }
 
     // Texto WA por ambiente
     var pTxt=pds.map(function(p){return '• '+(p.desc||'Peça')+' — '+p.w+'×'+p.h+'cm'+(p.q>1?' ×'+p.q:'');}).join('\n');
