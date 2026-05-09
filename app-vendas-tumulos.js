@@ -40,9 +40,9 @@ var VT_PACOTES = {
       q.cruz.on        = false;
       q.foto.on        = false;
       q.pedras.moldura.on    = false;
-      if (q.acab && q.acab.polimento) q.acab.polimento.on = false;
-      if (q.acab && q.acab.resinagem) q.acab.resinagem.on = false;
-      if (q.acab && q.acab.bisote) q.acab.bisote.on = false;
+      q.acab.polimento.on    = false;
+      q.acab.resinagem.on    = false;
+      q.acab.bisote.on       = false;
     }
   },
 
@@ -78,9 +78,9 @@ var VT_PACOTES = {
       q.cruz.on             = false;
       q.foto.on             = false;
       q.pedras.moldura.on   = true;
-      if (q.acab && q.acab.polimento) q.acab.polimento.on = false;
-      if (q.acab && q.acab.resinagem) q.acab.resinagem.on = false;
-      if (q.acab && q.acab.bisote) q.acab.bisote.on = false;
+      q.acab.polimento.on   = false;
+      q.acab.resinagem.on   = false;
+      q.acab.bisote.on      = false;
     }
   },
 
@@ -118,11 +118,11 @@ var VT_PACOTES = {
       q.foto.moldura          = true;
       q.pedras.moldura.on     = true;
       q.pedras.pingadeira.on  = true;
-      if (q.acab && q.acab.polimento) q.acab.polimento.on = true;
-      if (q.acab && q.acab.polimento) q.acab.polimento.qty = 1;
-      if (q.acab && q.acab.resinagem) q.acab.resinagem.on = true;
-      if (q.acab && q.acab.resinagem) q.acab.resinagem.qty = 1;
-      if (q.acab && q.acab.bisote) q.acab.bisote.on = false;
+      q.acab.polimento.on     = true;
+      q.acab.polimento.qty    = 1;
+      q.acab.resinagem.on     = true;
+      q.acab.resinagem.qty    = 1;
+      q.acab.bisote.on        = false;
     }
   }
 };
