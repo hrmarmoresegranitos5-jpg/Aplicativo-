@@ -109,21 +109,19 @@ function tumAplicarTabela(opts) {
 
   // ── 3. Construção: diária do pedreiro em todas as atividades de obra
   var diariaObra = (tp.estrutura.alvenaria_dia ? tp.estrutura.alvenaria_dia.preco : 350);
-  if (q.obra && typeof q.obra === 'object') {
-    Object.keys(q.obra).forEach(function(k) {
-      if (q.obra[k] && 'diaria' in q.obra[k]) q.obra[k].diaria = diariaObra;
-    });
-  }
+  Object.keys(q.obra).forEach(function(k) {
+    if (q.obra[k] && 'diaria' in q.obra[k]) q.obra[k].diaria = diariaObra;
+  });
 
   // ── 4. Concreto + ferragem: se gaveta_dupla ou mais, garante estrutura ativa
   if (gavetas >= 2) {
-    if (q.obra && q.obra.concreto) {
+    if (q.obra.concreto) {
       q.obra.concreto.on   = true;
       q.obra.concreto.dias = Math.max(1, gavetas - 1);
-      if (tp.estrutura.concreto) q.obra.concreto.diaria = tp.estrutura.concreto.preco;
+      if (tp.estrutura.concreto) q.obra.concreto.diaria = tp.estrutura.concreto.preco; // diária representa custo fixo nesse caso
     }
-    if (q.obra && q.obra.levantamento) q.obra.levantamento.on = true;
-    if (q.obra && q.obra.gavetas)      q.obra.gavetas.on      = true;
+    if (q.obra.levantamento) q.obra.levantamento.on = true;
+    if (q.obra.gavetas)      q.obra.gavetas.on      = true;
   }
 
   // ── 5. Gaveta extra: cobra diferença de cada gaveta além da primeira na peça
@@ -139,7 +137,7 @@ function tumAplicarTabela(opts) {
 
   // ── 7. Acabamentos especiais: venda e custo
   function _apAcab(acabKey, tpKey) {
-    if (!tp.acabamentos[tpKey] || !q.acab || !q.acab[acabKey]) return;
+    if (!tp.acabamentos[tpKey] || !q.acab[acabKey]) return;
     var item = tp.acabamentos[tpKey];
     q.acab[acabKey].venda = item.preco;
     if (!q.acab[acabKey].custo || opts.forceAcab)
