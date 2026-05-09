@@ -55,7 +55,7 @@ var DEF_TUM_PRECOS = {
 // INIT — garante CFG.tumPrecos com fallback para DEF_TUM_PRECOS
 // ─────────────────────────────────────────────────────────────────────
 function tumInitPrecos() {
-  if (typeof CFG === 'undefined') return;
+  if (typeof CFG === 'undefined' || !CFG) return;
   if (!CFG.tumPrecos) {
     CFG.tumPrecos = JSON.parse(JSON.stringify(DEF_TUM_PRECOS));
     if (typeof svCFG === 'function') svCFG();
@@ -79,6 +79,7 @@ function tumInitPrecos() {
 // ─────────────────────────────────────────────────────────────────────
 function tumAplicarTabela(opts) {
   tumInitPrecos();
+  if (!CFG || !CFG.tumPrecos) return;
   var tp = CFG.tumPrecos;
   var q  = TUM.q;
   var d  = q.dims;
